@@ -7,20 +7,18 @@ aai.settings.api_key = settings.ASSEMBLYAI_API_KEY
 
 class AssemblyAIService:
     @staticmethod
-    async def transcribe_audio_async(file_path: str) -> dict:
+    async def transcribe_audio_async(file_path: str, redact_pii: bool = True) -> dict:
         """
         Asynchronously transcibes audio using AssemblyAI with polling.
-        Enables Speaker Diarization and PII Redaction.
+        Enables Speaker Diarization and PII Redaction (optional).
         """
         transcriber = aai.Transcriber()
         
         # Configure for Medical domain requirements
         config = aai.TranscriptionConfig(
             speaker_labels=True,  # Speaker Diarization
-            redact_pii=True,      # PII Redaction
+            redact_pii=redact_pii,      # PII Redaction (Toggleable)
             redact_pii_policies=[
-                aai.PIIRedactionPolicy.medical_process,
-                aai.PIIRedactionPolicy.medical_condition,
                 aai.PIIRedactionPolicy.person_name,
                 aai.PIIRedactionPolicy.phone_number,
             ],
