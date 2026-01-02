@@ -1,0 +1,18 @@
+{
+  "source_file": "6-audio.aac",
+  "transcript_text": "48 year old lady with history of hypertension for last 3 years on Telmisartan Chlorthalidone 12.5mg with 40mg combination well controlled with history of right optic neuritis in 2023 treated with methylprednisolone 1 gram for three days with complete recovery. MRI brain then was essentially normal. VEP had shown prolonged right b 100 latencies. She was treated as previously mentioned with near total recovery. For the last few days she has noted blurring of vision on the left side. Vision on ophthalmic assessment 6 by 9 on the right eye 6 by 12 on the left side with visual field defects. She has a afferent pupillary defect on the left side. Fundus shows mild temporal pallor right more than left with arteriolar attenuation with grade 2 hypertensive changes. No other neurological symptoms. Clinical examination Eye movements full no bulbar dysfunction bilaterally symmetrical effluntars flexa impression Recurrent optic neuritis initially left, now right diabetic mellitus on newly diagnosed Initiated on oral hypoglycemic drug metformin with glimipride bracket Azomet G1 close brackets plan MRI brain with contrast NMO mock to test restart on methyl prednisolone 1 gram daily for 3 days. Would need monitoring of blood sugars and BP and diet modification during the steroid course along with steroids to start on pantoprasol 40 milligram once daily to do CBC, ESR, CRP, creatinine, vitamin B12 and vitamin D levels.",
+  "soap_note": {
+    "soap_note": {
+      "subjective": "A 48-year-old lady with a history of hypertension for the last 3 years, well-controlled on Telmisartan Chlorthalidone 12.5mg with 40mg combination. She has a history of right optic neuritis in 2023, which was treated with methylprednisolone 1 gram for three days, leading to complete recovery. An MRI brain at that time was essentially normal, and VEP had shown prolonged right B100 latencies. For the last few days, she has noted blurring of vision on the left side. She reports no other neurological symptoms.",
+      "objective": "Ophthalmic assessment shows vision of 6/9 on the right eye and 6/12 on the left side, with visual field defects. There is an afferent pupillary defect on the left side. Fundus examination reveals mild temporal pallor (right more than left) with arteriolar attenuation and Grade 2 hypertensive changes. Clinical examination shows full eye movements, no bulbar dysfunction, and bilaterally symmetrical effluntars flexa.",
+      "assessment": "Impression of recurrent optic neuritis, initially left, now right. Newly diagnosed Diabetes Mellitus, for which she was initiated on oral hypoglycemic drugs: metformin with glimipride (Azomet G1).",
+      "plan": "Order an MRI brain with contrast. Perform NMO mock to test. Restart on methylprednisolone 1 gram daily for 3 days. Monitor blood sugars and blood pressure, and implement diet modification during the steroid course. Start pantoprazole 40 milligrams once daily along with steroids. Order CBC, ESR, CRP, creatinine, vitamin B12, and vitamin D levels."
+    },
+    "low_confidence": [
+      "effluntars flexa",
+      "Recurrent optic neuritis initially left, now right",
+      "NMO mock to test"
+    ],
+    "risk_flags": []
+  }
+}

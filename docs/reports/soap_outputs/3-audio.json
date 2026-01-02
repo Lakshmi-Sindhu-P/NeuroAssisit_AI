@@ -1,0 +1,25 @@
+{
+  "source_file": "3-audio.aac",
+  "transcript_text": "58 year old gentleman with history of diabetes for last 6 years fairly well controlled sugars always reported to be less than 200 milligram percentage for last four years has significant aches and pains affecting different parts of the body. Worse in the thighs almost persistent throughout the day, no respite despite medical management. His previous nerve conduction studies in 2023 had shown bilateral median sensory motor axonopathy along with axonal polyneuropathy affecting lower limb nerves. His workup with ANCA electrophoresis were all negative. CRP was very marginally increased. He developed worsening of symptoms in 2024 with left hemiataxia that has gotten resolved. MRI brain showed an acute right thalamic infarct and CT angio showed calcified non significant carotid disease. Echo short concentric LVH presently blood pressure is well controlled with medications. Clinically no weakness has tender points with the nape of the neck muscles, bilateral temporal regions, forearm muscles, quadriceps and calf muscles. Ankle jerk is absent. He has a graded sensory deficits below ankle and has significant dermatopathy as pigmented macules involving both the shins due to possibly due to diabetic dermapathy. Presently on juzela 60mg in the mornings, amitriptyline 25mg at night along with vitamin nisopram plus echosporin AV impression myofascial pains with trigger points of note. He was a heavy smoker which he has quit a month ago. Continues to take moderate quantities of alcohol advice cpk, esr, liver function test and then review impression myofascial pain syndrome to rule out myositis.",
+  "soap_note": {
+    "soap_note": {
+      "subjective": "58-year-old gentleman presents with a history of diabetes for 6 years, reportedly well-controlled (sugars less than 200 mg% for the last four years). He reports significant aches and pains affecting different parts of the body, worse in the thighs, almost persistent throughout the day, with no respite despite medical management. He experienced worsening of symptoms in 2024, including left hemiataxia that has since resolved. He has a history of heavy smoking, which he quit a month ago, and continues to consume moderate quantities of alcohol.",
+      "objective": "Previous nerve conduction studies in 2023 showed bilateral median sensory motor axonopathy along with axonal polyneuropathy affecting lower limb nerves. Workup with ANCA electrophoresis was negative, and CRP was marginally increased. MRI brain showed an acute right thalamic infarct. CT angio revealed calcified non-significant carotid disease. Echo showed concentric LVH. Blood pressure is presently well-controlled with medications. Clinically, there is no weakness. Tender points are noted in the nape of the neck muscles, bilateral temporal regions, forearm muscles, quadriceps, and calf muscles. Ankle jerk is absent. He has graded sensory deficits below the ankle and significant dermatopathy presenting as pigmented macules involving both shins, possibly due to diabetic dermopathy. Current medications include Juzela 60mg in the mornings, Amitriptyline 25mg at night, along with Vitamin Nisopram and Echosporin AV.",
+      "assessment": "Myofascial pains with trigger points. Myofascial pain syndrome (to rule out myositis). Diabetic polyneuropathy. History of acute right thalamic infarct. Diabetes mellitus.",
+      "plan": "Advise CPK, ESR, and liver function test. Review results after tests are completed."
+    },
+    "low_confidence": [
+      "juzela",
+      "nisopram",
+      "echosporin AV",
+      "dermapathy"
+    ],
+    "risk_flags": [
+      "History of heavy smoking (quit 1 month ago)",
+      "Moderate alcohol intake",
+      "History of acute right thalamic infarct",
+      "Concentric LVH",
+      "Diabetes mellitus"
+    ]
+  }
+}

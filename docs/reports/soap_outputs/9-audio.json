@@ -1,0 +1,14 @@
+{
+  "source_file": "9-audio.aac",
+  "transcript_text": "23 year old man with history of single generalized tonic clonic Seizure and year 2023. Subsequently has multiple brief episodes of unresponsiveness with mind being diverted elsewhere that lasts for several minutes. Recently had two episodes which are very prolonged, lasting for an hour. These events happen few times in a week or at times clusters over a day. Previously tried on Levetiracetam, Oxycarbazepine and Clobazam with very limited benefit. He is off medications from January 2025. Plan 1 EEG awaken sleep for classification and then review.",
+  "soap_note": {
+    "soap_note": {
+      "subjective": "The patient is a 23-year-old man with a history of a single generalized tonic-clonic seizure in 2023. Subsequently, he has experienced multiple brief episodes of unresponsiveness, described as his mind being diverted elsewhere, lasting for several minutes. Recently, he had two very prolonged episodes, each lasting for an hour. These events occur a few times a week or at times cluster over a day. He previously tried Levetiracetam, Oxycarbazepine, and Clobazam, with very limited benefit. He has been off medications since January 2025.",
+      "objective": "No objective findings, physical examination details, or vital signs were mentioned in the transcript.",
+      "assessment": "The patient presents with ongoing episodes of unresponsiveness following a history of a generalized tonic-clonic seizure, suggesting an uncontrolled seizure disorder or a related neurological condition requiring further classification.",
+      "plan": "1. EEG with awaken sleep for classification. 2. Review results subsequently."
+    },
+    "low_confidence": [],
+    "risk_flags": []
+  }
+}

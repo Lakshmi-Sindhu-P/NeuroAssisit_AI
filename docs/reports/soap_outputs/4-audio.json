@@ -1,0 +1,17 @@
+{
+  "source_file": "4-audio.aac",
+  "transcript_text": "Follow up case of generalized myasthenia had worsening with regards to his symptoms following. Bone marrow suppression secondary to azathioprine anti coronary stress receptor antibody titers were high, hence azathine has been stopped and he has been changed over to mycophenolate. Presently on 500mg twice daily of mycophenolate. Last counts 7000 last total leukocyte count 7450 advise continue present medication as he is asymptomatic. Recheck thorough leukocyte count. Consider reducing omnocortil to 10 milligram day one alternating with 5 milligrams day two. Review after six weeks for further titration of disease modifying medications. In addition, he has a symptom of prostatism that has been well controlled with medications. He is presently an alpha T once at night and Mirago 25mg mg in the morning.",
+  "soap_note": {
+    "soap_note": {
+      "subjective": "Patient is a follow-up case of generalized myasthenia. Previously experienced worsening symptoms following bone marrow suppression secondary to azathioprine. Currently asymptomatic. Also reports symptoms of prostatism, which are well controlled with medications.",
+      "objective": "Bone marrow suppression noted, secondary to azathioprine. Anti-coronary stress receptor antibody titers were high. Last total leukocyte count was 7450.",
+      "assessment": "Generalized myasthenia, complicated by bone marrow suppression secondary to azathioprine. Well-controlled prostatism.",
+      "plan": "Azathioprine has been stopped. Patient has been changed to mycophenolate 500mg twice daily, which should be continued. Recheck thorough leukocyte count. Consider reducing Omnocortil to 10mg day one, alternating with 5mg day two. Review after six weeks for further titration of disease modifying medications. Continue present medications for prostatism: Alpha T once at night and Mirago 25mg in the morning."
+    },
+    "low_confidence": [
+      "anti coronary stress receptor antibody titers",
+      "Alpha T"
+    ],
+    "risk_flags": []
+  }
+}

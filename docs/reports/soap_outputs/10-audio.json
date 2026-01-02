@@ -1,0 +1,18 @@
+{
+  "source_file": "10-audio.aac",
+  "transcript_text": "Eight year old girl with history of seizures diagnosed as atypical blre seen in February 2025. EEG showed very active right posterior temporal parietal spikes with marked activation in sleep 3ta MRI brain was essentially normal. She was optimized on anti seizure medications. Valparin was introduced with which she had good control of seizures. Recently she had one episode of right lower limb weakness paresthesia that lasted that lasted for about one minute. Multiple clusters on the same day Clobazam was increased to 2.5mg AM and 5mg HS presently asymptomatic present ASM, Valparin 200mg PO bid OX Carbazepin 150mg AM, 300mg HS Clobazam 5mg HS brief 50mg HS review after EEG.",
+  "soap_note": {
+    "soap_note": {
+      "subjective": "Eight-year-old girl with a history of atypical 'blre' seizures, diagnosed in February 2025. She was initially optimized on anti-seizure medications, achieving good control with the introduction of Valparin. Recently, she experienced one episode of right lower limb weakness and paresthesia, lasting approximately one minute, with multiple clusters occurring on the same day. Following this, Clobazam was increased to 2.5mg AM and 5mg HS. The patient is presently asymptomatic.",
+      "objective": "EEG showed very active right posterior temporal parietal spikes with marked activation in sleep ('3ta'). MRI brain was essentially normal. No other physical exam findings or vital signs were mentioned.",
+      "assessment": "Atypical 'blre' seizures, previously well-controlled, with a recent breakthrough event characterized by right lower limb weakness and paresthesia, prompting a Clobazam dose adjustment.",
+      "plan": "Continue current anti-seizure medication regimen, which includes: Valparin 200mg PO BID, Oxcarbazepine 150mg AM and 300mg HS, Clobazam 5mg HS, and 'brief' 50mg HS. Follow-up review after EEG."
+    },
+    "low_confidence": [
+      "blre",
+      "3ta",
+      "brief"
+    ],
+    "risk_flags": []
+  }
+}

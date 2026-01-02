@@ -1,0 +1,16 @@
+{
+  "source_file": "5-audio.aac",
+  "transcript_text": "84 year old gentleman with history of orthostatic hypertension for last three to four years which is being managed with Mido Drive 5mg twice daily. In addition, he also has history of slowing of gait for last two years where he has slowly started using wheelchair at home for the last few months has noted tremors of the right upper limb while sitting, cognition normal eye movements normal mild bradykinesia of the upper limbs with mild rest tremors right more than left lower limb bradykinesia 3x4 gait 3x4 balance 2x4 no bowel or bladder symptoms. Advise start on levodopa medications up titrate to best tolerated dose with reasonable good improvement in gait and bats. Physiotherapy and balancing exercises to do here CKD which is stable with a creatin of from 2.3.",
+  "soap_note": {
+    "soap_note": {
+      "subjective": "84-year-old gentleman with a history of orthostatic hypertension for the last three to four years, which is being managed with Midodrine 5mg twice daily. He also reports a history of slowing of gait for the last two years, leading to the use of a wheelchair at home for the last few months. He has noted tremors of the right upper limb while sitting. No bowel or bladder symptoms were reported.",
+      "objective": "Cognition is normal, and eye movements are normal. Mild bradykinesia of the upper limbs is observed, with mild rest tremors, right more than left. Lower limb bradykinesia is 3x4. Gait is 3x4, and balance is 2x4. He has stable CKD with a creatinine of 2.3.",
+      "assessment": "Orthostatic hypertension (managed). Probable Parkinsonism/movement disorder given slowing of gait, tremors, and bradykinesia. Stable Chronic Kidney Disease.",
+      "plan": "Initiate Levodopa medications, titrating up to the best tolerated dose with the goal of reasonable improvement in gait and balance. Recommend physiotherapy and balancing exercises."
+    },
+    "low_confidence": [
+      "bats"
+    ],
+    "risk_flags": []
+  }
+}

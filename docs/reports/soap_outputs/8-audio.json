@@ -1,0 +1,16 @@
+{
+  "source_file": "8-audio.aac",
+  "transcript_text": "31 year old gentleman with history of. Acute onset cerebral ataxia in the month of November that evolved over three to four weeks during which he had significant disability. He had bilateral gaze, awoke nystagmus, finger nose incoordination and significant gait ataxia. No postural hypertension, no other neurological symptoms, no bowel and bladder affection. He had similar episode many years ago for which he was evaluated in Manipur Hospital, Airport Road. No clear etiology was detected. He was treated on the lines of immunologically based cerebral ataxia of extensive workup to rule out any paraneoplastic antibodies. ONCO CT and blood tests were non contributory. Incidentally, his antibodies SOX1 was positive. These antibodies are associated with small cell SCLC of lung as paraneoplastic antibody titers. However, his ONCO CT has been normal and his previous episode in 2012 makes this possibility unlikely. He will be given a short course of immunological medications with a slow taper of steroids.",
+  "soap_note": {
+    "soap_note": {
+      "subjective": "31-year-old gentleman with acute onset cerebral ataxia in November, evolving over three to four weeks with significant disability. He denies postural hypertension, other neurological symptoms, and bowel/bladder affection. He reports a similar episode many years ago (evaluated in 2012) where he was evaluated in Manipur Hospital, Airport Road. No clear etiology was detected at that time, and he was treated for immunologically based cerebral ataxia. Extensive workup including paraneoplastic antibodies, ONCO CT, and blood tests were non-contributory during the previous episode.",
+      "objective": "Physical exam revealed bilateral gaze, awoke nystagmus, finger nose incoordination, and significant gait ataxia. SOX1 antibodies were positive. His previous ONCO CT scan was normal.",
+      "assessment": "31-year-old gentleman with recurrent cerebral ataxia. The current acute onset presentation with significant disability, nystagmus, incoordination, and gait ataxia is noted. Positive SOX1 antibodies are identified, which are associated with paraneoplastic small cell lung cancer (SCLC). However, given his history of a similar episode in 2012 and a normal previous ONCO CT, the possibility of SCLC is considered unlikely. The presentation is consistent with immunologically based cerebral ataxia.",
+      "plan": "Initiate a short course of immunological medications with a slow taper of steroids."
+    },
+    "low_confidence": [
+      "awoke nystagmus"
+    ],
+    "risk_flags": []
+  }
+}

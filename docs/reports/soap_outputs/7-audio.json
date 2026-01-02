@@ -1,0 +1,14 @@
+{
+  "source_file": "7-audio.aac",
+  "transcript_text": "Follow up case of seizure disorder. Onset of age from 21 years. All generalized tonic clonic seizures. Presently, generalized clonic seizures are well controlled with medications. He reports having episodes of visual blurring or unsteadiness that lasts for about half a minute to a minute. Unclear if these are seizures. Plan EEG awake and sleep and then to review. Previous EEG had shown very active right temporal, right temporal parietal epileptic form discharges.",
+  "soap_note": {
+    "soap_note": {
+      "subjective": "Patient is a follow-up case of seizure disorder with onset at age 21 years. He reports a history of generalized tonic-clonic seizures. Currently, his generalized clonic seizures are reported to be well controlled with medications. He is experiencing new episodes of visual blurring or unsteadiness, each lasting for about half a minute to a minute. It is unclear if these new episodes are seizures.",
+      "objective": "Previous EEG had shown very active right temporal, right temporal parietal epileptiform discharges.",
+      "assessment": "Seizure disorder. Generalized clonic seizures are currently well controlled on medication. New episodes of visual blurring or unsteadiness are reported, and their nature as seizures is unclear.",
+      "plan": "Plan for EEG awake and sleep, then to review findings."
+    },
+    "low_confidence": [],
+    "risk_flags": []
+  }
+}

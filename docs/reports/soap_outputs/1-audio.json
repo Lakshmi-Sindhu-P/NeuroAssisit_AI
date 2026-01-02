@@ -1,0 +1,16 @@
+{
+  "source_file": "1-audio.aac",
+  "transcript_text": "##### 33 years old with history of non specific symptoms for last four months. The onset had non specific aches and pains with mild stiffness of both hands, the more prominent or the ulnar aspect involving the little and ring finger. This has spread to involve other parts of the arm forearm and can also spread to the right shoulder and the precordial regions. No other significant neurological symptoms she had seen GP in uk. She was advised blood tests which were reported normal except for mild degree of vitamin iron deficiency. She was seen by a physiatrist and advised ulnar stretches. Clinical examination of focal neurological deficits. She has had poor sleep and as she's nursing a three year old child and taking care of her family with significant emotional physical work when compared to previous clinical examination. Essentially normal impression non specific ache pains. Suggested lab work to do and then review. Start on Amitriptyline 25 milligram half tablet at night and review after with blood reports.",
+  "soap_note": {
+    "soap_note": {
+      "subjective": "33-year-old patient presents with a history of non-specific symptoms for the last four months. The onset involved non-specific aches and pains with mild stiffness of both hands, more prominent on the ulnar aspect involving the little and ring finger. These symptoms have since spread to involve other parts of the arm, forearm, right shoulder, and precordial regions. The patient denies other significant neurological symptoms. She had previously seen a GP in the UK, where blood tests were reported normal except for a mild degree of vitamin iron deficiency. She was also seen by a physiatrist and advised ulnar stretches. She reports poor sleep, is nursing a three-year-old child, and is taking care of her family, describing significant emotional and physical work. Her impression, when compared to previous clinical examination, is essentially normal non-specific ache pains.",
+      "objective": "Clinical examination of focal neurological deficits was noted. (No specific findings or details regarding the examination results are provided in the transcript for the current visit.)",
+      "assessment": "Impression: Non-specific ache pains.",
+      "plan": "Suggested lab work to be done and then review. Initiate Amitriptyline 25 milligrams, half tablet at night. Review after blood reports are available."
+    },
+    "low_confidence": [
+      "\"Clinical examination of focal neurological deficits\" (Ambiguous phrasing: unclear if deficits were found, ruled out, or if this phrase merely describes the focus of the examination without stating a finding.)"
+    ],
+    "risk_flags": []
+  }
+}
