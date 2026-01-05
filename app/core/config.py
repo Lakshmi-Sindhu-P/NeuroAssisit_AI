@@ -1,6 +1,7 @@
 import os
 from typing import List, Optional
-from pydantic import BaseSettings, root_validator
+from pydantic import root_validator
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     DATABASE_URL: str
@@ -19,7 +20,7 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
         case_sensitive = True
 
-    @root_validator(pre=False)
+    @root_validator(pre=False, skip_on_failure=True)
     def check_google_key(cls, values):
         google_api_key = values.get("GOOGLE_API_KEY")
         gemini_api_key = values.get("GEMINI_API_KEY")

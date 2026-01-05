@@ -1,7 +1,9 @@
 from sqlmodel import create_engine, Session, SQLModel
 from app.core.config import settings
 
-engine = create_engine(settings.DATABASE_URL, echo=False)
+# engine = create_engine(settings.DATABASE_URL, echo=False)
+engine = create_engine("sqlite:///./neuroassist.db", connect_args={"check_same_thread": False}, echo=False)
+
 
 def init_db():
     # SQLModel.metadata.create_all(engine)  # Disabled to protect existing schema

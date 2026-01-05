@@ -85,16 +85,32 @@ def test_end_to_end_chain(client, auth_headers, test_audio_file):
     r = client.get("/api/v1/auth/me")
     doctor_id = r.json()["id"]
         
+    # Login as Patient to book appointment
+    resp = client.post("/api/v1/auth/login", data={
+        "username": patient_email,
+        "password": "pw"
+    })
+    assert resp.status_code == 200
+    patient_token = resp.json()["access_token"]
+    
+    # Switch to Patient Context
+    client.headers.update({"Authorization": f"Bearer {patient_token}"})
+
     # Create Appointment
     resp = client.post("/api/v1/appointments/", json={
         "patient_id": patient_id,
         "doctor_id": doctor_id,
-        "scheduled_at": "2024-01-01T10:00:00",
-        "reason": "Headache"
+        "scheduled_at": "2030-01-01T10:00:00+00:00",
+        "reason": "Headache",
+        "doctor_name": "Dr. Test"
     })
     assert resp.status_code in [200, 201], f"Create Appointment failed: {resp.text}"
     appointment_id = resp.json()["id"]
     
+    # Switch back to Doctor Context for Consultation creation (if needed) or stay as patient?
+    # Usually Doctor creates consultation.
+    client.headers.update(auth_headers)
+
     # 2. Create Consultation
     resp = client.post("/api/v1/consultations/", json={
         "appointment_id": appointment_id,
@@ -203,12 +219,25 @@ def test_corrupt_file_upload(client, auth_headers, corrupt_audio_file):
     assert r.status_code in [200, 201]
     patient_id = r.json()["user_id"]
 
+    # Login as Patient
+    resp = client.post("/api/v1/auth/login", data={
+        "username": patient_email,
+        "password": "pw"
+    })
+    assert resp.status_code == 200
+    token = resp.json()["access_token"]
+    client.headers.update({"Authorization": f"Bearer {token}"})
+
     # Create Appointment
     resp = client.post("/api/v1/appointments/", json={
-        "patient_id": patient_id, "doctor_id": doctor_id, "scheduled_at": "2024-01-02T10:00:00"
+        "patient_id": patient_id, "doctor_id": doctor_id, "scheduled_at": "2030-01-02T10:00:00+00:00",
+        "doctor_name": "Dr. Test", "reason": "Test"
     })
     appointment_id = resp.json()["id"]
     
+    # Switch back to Doctor for Consultation
+    client.headers.update(auth_headers)
+
     # Create Consultation
     resp = client.post("/api/v1/consultations/", json={"appointment_id": appointment_id})
     consultation_id = resp.json()["id"]

@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from app.core.db import get_session
 from app.models.base import User, PatientProfile, UserRole
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, RoleChecker
 from pydantic import BaseModel
 from typing import Optional, List
+from uuid import UUID
 from datetime import datetime
 
 router = APIRouter()
@@ -54,18 +55,34 @@ def update_my_profile(
     session.refresh(profile)
     return profile
 
-@router.get("/me/profile", response_model=PatientProfile)
+@router.get("/me/profile", response_model=dict)
 def get_my_profile(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    if current_user.role != UserRole.PATIENT:
-         raise HTTPException(status_code=400, detail="Endpoint currently for Patients only")
-         
-    profile = session.exec(select(PatientProfile).where(PatientProfile.user_id == current_user.id)).first()
-    if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
-    return profile
+    """
+    Get current user profile (Patient or Doctor).
+    Returns dict to accommodate different profile shapes.
+    """
+    if current_user.role == UserRole.PATIENT:
+        profile = session.exec(select(PatientProfile).where(PatientProfile.user_id == current_user.id)).first()
+        if not profile:
+            # Return basic info if profile missing
+            return {"first_name": "Patient", "last_name": "", "user_id": str(current_user.id)}
+        return profile.dict()
+        
+    elif current_user.role == UserRole.DOCTOR:
+        from app.models.base import DoctorProfile
+        profile = session.exec(select(DoctorProfile).where(DoctorProfile.user_id == current_user.id)).first()
+        if not profile:
+            return {"first_name": "Doctor", "last_name": "", "user_id": str(current_user.id)}
+        return profile.dict()
+        
+    elif current_user.role == UserRole.FRONT_DESK:
+        # Front desk might not have a dedicated profile table yet
+        return {"first_name": "Front", "last_name": "Desk", "user_id": str(current_user.id)}
+    
+    return {"first_name": "User", "last_name": "", "user_id": str(current_user.id)}
 
 @router.get("/doctors", response_model=List[dict])
 def list_doctors(
@@ -95,3 +112,27 @@ def list_doctors(
             "image": f"https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face" # Placeholder
         })
     return doctors
+
+@router.get("/patients/{patient_id}", response_model=PatientProfile)
+def get_patient_profile(
+    patient_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(RoleChecker([UserRole.DOCTOR, UserRole.FRONT_DESK]))
+):
+    """
+    Get a specific patient's profile.
+    Accessible by Doctors and Front Desk.
+    """
+    # Verify patient exists
+    patient = session.get(User, patient_id)
+    if not patient or patient.role != UserRole.PATIENT:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    profile = session.exec(select(PatientProfile).where(PatientProfile.user_id == patient_id)).first()
+    
+    if not profile:
+        # Return empty profile wrapper if not set
+        return PatientProfile(user_id=patient_id, first_name="Unknown", last_name="Patient")
+        
+    return profile
+

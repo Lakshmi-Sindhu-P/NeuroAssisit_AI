@@ -53,7 +53,7 @@ class GeminiService:
         )
         
         prompt = f"""
-        You are an expert medical scribe. Your task is to analyze the following Doctor-Patient consultation transcript and generate a professional, structured SOAP note encoded as JSON.
+        You are an expert medical scribe. Your task is to analyze the following Doctor-Patient consultation transcript and generate a HIGHLY DETAILED, professional SOAP note encoded as JSON.
         
         Patient Context:
         {context_str}
@@ -62,12 +62,13 @@ class GeminiService:
         {formatted_transcript}
         
         Instructions:
-        1. Analyze the transcript in the context of the patient's demographics and history.
-        2. Extrapolate the Subjective, Objective, Assessment, and Plan sections.
-        3. **STRICT GROUNDING**: Do NOT infer information not present in the audio. If a vital sign or detail is not explicitly stated or strongly implied by the transcript, do NOT invent it.
-        4. **UNCERTAINTY**: If a term is ambiguous (e.g., "measure" vs "mention") or if the speaker is unclear, flag it in the "low_confidence" list.
-        5. Identify any Risk Flags (e.g., Suicide risk, Severe allergies, Abuse).
-        6. Return STRICTLY valid JSON. No markdown formatting.
+        1. **Subjective**: Detailed narrative of patient's complaints, history of present illness. Use bullet points for symptoms.
+        2. **Objective**: Extract all observations, physical findings, and vitals. If none, state "No physical findings reported".
+        3. **Assessment**: Clear diagnosis or differential diagnoses based on the evidence.
+        4. **Plan**: Detailed treatment plan, including specific medications (name, dosage), behavioral advice, and follow-up instructions.
+        5. **STRICT GROUNDING**: Do NOT invent information.
+        6. **Style**: Professional, concise text, but covers ALL points discussed.
+        7. **Format**: Return STRICTLY valid JSON.
         
         Required JSON Structure:
         {{

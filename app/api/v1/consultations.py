@@ -29,6 +29,14 @@ class ConsultationRead(BaseModel):
     appointment: Optional[Any] = None
     audio_file: Optional[Any] = None
     soap_note: Optional[Any] = None
+    safety_warnings: Optional[List[dict]] = None
+    notes: Optional[str] = None
+    diagnosis: Optional[str] = None
+    prescription: Optional[str] = None
+    urgency_score: Optional[int] = None
+    triage_category: Optional[str] = None
+    created_at: Optional[Any] = None
+    end_time: Optional[Any] = None
 
     class Config:
         orm_mode = True
@@ -108,8 +116,8 @@ def get_my_consultations(
         statement.options(
             selectinload(Consultation.audio_file), 
             selectinload(Consultation.soap_note),
-            selectinload(Consultation.appointment)
-        )
+            selectinload(Consultation.appointment).selectinload(Appointment.patient).selectinload(User.patient_profile)
+        ).order_by(Consultation.created_at.desc())
     ).all()
     return results
 
@@ -126,7 +134,7 @@ async def upload_audio(
         raise HTTPException(status_code=404, detail="Consultation not found")
         
     # Validation
-    if not file.filename.endswith(('.wav', '.mp3', '.m4a')):
+    if not file.filename.endswith(('.wav', '.mp3', '.m4a', '.aac')):
         raise HTTPException(status_code=400, detail="Invalid file format")
 
     # Save File
@@ -160,3 +168,55 @@ async def upload_audio(
     background_tasks.add_task(process_consultation_flow, consultation.id)
 
     return {"message": "Audio uploaded, processing started", "audio_id": file_id}
+
+class ConsultationUpdate(BaseModel):
+    notes: Optional[str] = None
+    diagnosis: Optional[str] = None
+    prescription: Optional[str] = None
+
+@router.patch("/{id}", response_model=Consultation)
+def update_consultation(
+    id: UUID,
+    update_data: ConsultationUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(RoleChecker([UserRole.DOCTOR, UserRole.FRONT_DESK]))
+):
+    consultation = session.get(Consultation, id)
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consultation not found")
+        
+    # Access Control (Doctors only edit their own or valid patients)
+    if current_user.role == UserRole.DOCTOR and consultation.doctor_id != current_user.id:
+         # Simplified check; in real app might allow covering doctors
+         raise HTTPException(status_code=403, detail="Not authorized to edit this consultation")
+
+    if update_data.notes is not None:
+        consultation.notes = update_data.notes
+    if update_data.diagnosis is not None:
+        consultation.diagnosis = update_data.diagnosis
+    if update_data.prescription is not None:
+        consultation.prescription = update_data.prescription
+        
+    session.add(consultation)
+    session.commit()
+    session.refresh(consultation)
+    return consultation
+
+@router.post("/{id}/finish", response_model=Consultation)
+def finish_consultation(
+    id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(RoleChecker([UserRole.DOCTOR]))
+):
+    consultation = session.get(Consultation, id)
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consultation not found")
+        
+    consultation.end_time = datetime.utcnow()
+    # Ensure status is COMPLETED (it might already be if coming from AI, but good to ensure)
+    consultation.status = ConsultationStatus.COMPLETED
+    
+    session.add(consultation)
+    session.commit()
+    session.refresh(consultation)
+    return consultation

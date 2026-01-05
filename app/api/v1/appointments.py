@@ -15,9 +15,12 @@ def create_appointment(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    # Validate user is a patient
-    if current_user.role != UserRole.PATIENT:
-        raise HTTPException(status_code=403, detail="Only patients can book appointments")
+    # Validate permissions
+    if current_user.role == UserRole.PATIENT:
+        if payload.patient_id != current_user.id:
+             raise HTTPException(status_code=403, detail="Patients can only book for themselves")
+    elif current_user.role not in [UserRole.DOCTOR, UserRole.FRONT_DESK]:
+         raise HTTPException(status_code=403, detail="Insufficient permissions")
     
     # Validate scheduled time is in the future
     if payload.scheduled_at <= datetime.now(timezone.utc):

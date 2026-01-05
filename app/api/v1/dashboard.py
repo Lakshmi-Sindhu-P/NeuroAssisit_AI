@@ -50,6 +50,7 @@ def get_patient_queue(session: Session = Depends(get_session)):
         select(Consultation, PatientProfile)
         .join(PatientProfile, Consultation.patient_id == PatientProfile.user_id)
         .where(Consultation.status == ConsultationStatus.COMPLETED)
+        .where(Consultation.end_time == None)
         .order_by(Consultation.urgency_score.desc(), Consultation.created_at.asc())
     )
     results = session.exec(query).all()
@@ -68,7 +69,7 @@ def get_patient_queue(session: Session = Depends(get_session)):
             "urgency_score": consultation.urgency_score or 0,
             "triage_category": consultation.triage_category,
             "wait_time_minutes": wait_time_min,
-            "safety_warnings": len(consultation.safety_warnings) if consultation.safety_warnings else 0
+            "safety_warnings": consultation.safety_warnings or []
         })
     
     return queue
