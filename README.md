@@ -43,6 +43,17 @@ We have delivered a fully functional **Minimum Viable Product** with end-to-end 
 *   **Safety Alerts**: Visual Warning Banners (Red/Yellow) for drug interactions or critical lab values.
 *   **Full-Height Console**: A responsive, fixed-layout dashboard designed for clinical monitors.
 
+### 🏥 Front Desk & Triage (Admin)
+*   **Walk-in Registration**: Instant account creation for new patients (`PatientCheckIn.tsx`).
+*   **Voice-Based Intake**: Receptionists can record initial symptoms, which the AI pre-analyzes before the doctor sees the patient.
+*   **Doctor Assignment**: Manual override to assign specific patients to available specialists.
+*   **Queue Oversight**: Bird's-eye view of the entire clinic's load (Critical vs Stable ratio).
+
+### 📱 Patient Experience (Mobile Optimized)
+*   **Voice Booking**: Patients can describe symptoms verbally to book appointments ("I have a migrated headache...").
+*   **Report Access**: Secure view of past SOAP notes and prescriptions.
+*   **Real-time Status**: View "Upcoming Appointment" details and confirmation status.
+
 ### 🧠 The AI Engine
 *   **Smart Transcription**: Converts raw audio to text with >96% accuracy (normalized).
 *   **Speaker Diarization**: Automatically distinguishes between "Doctor" and "Patient" voices.
