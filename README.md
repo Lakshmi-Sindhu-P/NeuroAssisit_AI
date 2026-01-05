@@ -20,7 +20,7 @@ By integrating **AssemblyAI** (Speech-to-Text) with **Google Gemini 2.5 Flash** 
 
 ---
 
-## �️ Tech Stack
+## 🛠️ Tech Stack
 The system is built on a modern, scalable, and type-safe architecture.
 
 | Component | Technology | Rationale |
@@ -31,6 +31,22 @@ The system is built on a modern, scalable, and type-safe architecture.
 | **AI (Speech)** | **AssemblyAI** | Best-in-class medical dictation support with Speaker Diarization. |
 | **AI (Logic)** | **Google Gemini 2.5 Flash** | Low-latency clinical reasoning and JSON-structured output. |
 | **Security** | **OAuth2 + JWT** | Stateless authentication with Role-Based Access Control (RBAC). |
+
+---
+
+## 👨‍💻 Setup Instructions
+
+```bash
+# 1. Backend
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+# 2. Frontend
+cd frontend
+npm install
+npm run dev
+```
 
 ---
 
@@ -73,19 +89,6 @@ We have delivered a fully functional **Minimum Viable Product** with end-to-end 
 
 ---
 
-## �📈 The Accuracy Journey (26% → 96%)
-Our initial tests showed low accuracy (26%) which was alarming. **Forensic Analysis** proved this was a false alarm.
-
-| Stage | Accuracy | Insight |
-| :--- | :--- | :--- |
-| **Initial Raw** | 🛑 26.7% | Failed due to punctuation ("." vs "") and number formats ("3" vs "three"). |
-| **Normalized** | ✅ **96.4%** | After normalizing text, we found the AI was nearly perfect. |
-| **Forensic Win** | 🏆 **> 100%?** | **Discovery**: The AI actually *corrected* human typos in the test data (e.g., "Mutual Prednisolone" -> "Methylprednisolone"). |
-
-👉 **[Read the Full Accuracy Report](docs/stt_comparison_report.md)**
-
----
-
 ## 🏗️ Project Implementation & Walkthrough
 
 ### 1. The Architecture
@@ -105,16 +108,7 @@ We didn't just call APIs; we engineered a pipeline:
 
 ---
 
-## 📊 Reports & Artifacts
-We generated comprehensive documentation throughout the development lifecycle:
-
-*   📄 **[Project Implementation Summary](docs/project_implementation_summary.md)**: A memoir of the entire migration.
-*   📄 **[STT Comparison Report](docs/stt_comparison_report.md)**: Proof of >96% accuracy.
-*   📄 **[Metrics & Performance](docs/metrics_report.md)**: Analysis of Word Error Rate (WER) and Hallucination Checks.
-
----
-
-## 🖼️ User Journey (Walkthrough)
+## ️ User Journey (Walkthrough)
 
 ### 1. Patient Registration (The "Walk-In")
 *   Doctor clicks **"Add Patient"**.
@@ -157,19 +151,25 @@ The following **API Checkpoints** have been implemented, tested, and verified in
 
 ---
 
-### 👨‍💻 Setup Instructions
+## � The Accuracy Journey (26% → 96%)
+Our initial tests showed low accuracy (26%) which was alarming. **Forensic Analysis** proved this was a false alarm.
 
-```bash
-# 1. Backend
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+| Stage | Accuracy | Insight |
+| :--- | :--- | :--- |
+| **Initial Raw** | 🛑 26.7% | Failed due to punctuation ("." vs "") and number formats ("3" vs "three"). |
+| **Normalized** | ✅ **96.4%** | After normalizing text, we found the AI was nearly perfect. |
+| **Forensic Win** | 🏆 **> 100%?** | **Discovery**: The AI actually *corrected* human typos in the test data (e.g., "Mutual Prednisolone" -> "Methylprednisolone"). |
 
-# 2. Frontend
-cd frontend
-npm install
-npm run dev
-```
+👉 **[Read the Full Accuracy Report](docs/stt_comparison_report.md)**
+
+---
+
+## 📊 Reports & Artifacts
+We generated comprehensive documentation throughout the development lifecycle:
+
+*   📄 **[Project Implementation Summary](docs/project_implementation_summary.md)**: A memoir of the entire migration.
+*   📄 **[STT Comparison Report](docs/stt_comparison_report.md)**: Proof of >96% accuracy.
+*   📄 **[Metrics & Performance](docs/metrics_report.md)**: Analysis of Word Error Rate (WER) and Hallucination Checks.
 
 ---
 
