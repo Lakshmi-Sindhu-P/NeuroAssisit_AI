@@ -80,11 +80,27 @@ We generated comprehensive documentation throughout the development lifecycle:
 
 ---
 
-## ✨ Checkpoints & Credits
-*   **Checkpoint 1**: Setup FastAPI + SQLModel.
-*   **Checkpoint 2**: Integrated AssemblyAI + Diarization.
-*   **Checkpoint 3**: Fixed Frontend Layout & Upload Bugs (The "Full Height" Console).
-*   **Final Polish**: "Strict Grounding" Prompt Engineering to stop hallucinations.
+## ✨ Verified API Checkpoints
+The following **API Checkpoints** have been implemented, tested, and verified in the production build:
+
+### 🔐 Checkpoint 1: Authentication & RBAC
+*   `POST /auth/signup`: Patient/Doctor Registration with role assignment.
+*   `POST /auth/login`: JWT Token generation (HS256).
+*   **Security**: `RoleChecker` dependency ensures Patients cannot access Doctor endpoints.
+
+### 📋 Checkpoint 2: Queue & Dashboard
+*   `GET /dashboard/queue`: Real-time fetch of waiting patients (sorted by Urgency).
+*   `GET /dashboard/queue/failed`: Error catch-all for failed AI jobs.
+*   `POST /appointments`: "Walk-in" scheduling with future-timestamp validation.
+
+### 🎙️ Checkpoint 3: Consultation & AI
+*   `POST /consultations`: Creates session from Appointment.
+*   `POST /consultations/{id}/upload`:Chunked Audio Upload -> Triggers Async Background Task.
+*   `GET /consultations/{id}`: Polls for SOAP Note completion & Risk Flags.
+
+### 📝 Checkpoint 4: Clinical Documentation
+*   `PATCH /consultations/{id}`: Saves edits to Diagnosis/Prescription.
+*   `POST /consultations/{id}/finish`: Signs off and moves patient to History.
 
 ---
 
