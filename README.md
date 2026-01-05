@@ -20,7 +20,49 @@ By integrating **AssemblyAI** (Speech-to-Text) with **Google Gemini 2.5 Flash** 
 
 ---
 
-## 📈 The Accuracy Journey (26% → 96%)
+## �️ Tech Stack
+The system is built on a modern, scalable, and type-safe architecture.
+
+| Component | Technology | Rationale |
+| :--- | :--- | :--- |
+| **Backend** | **Python FastAPI** | High-performance Async I/O, native support for AI libraries. |
+| **Frontend** | **React + Vite** (TypeScript) | Lightning-fast builds, strict type safety, ShadCN UI for premium aesthetics. |
+| **Database** | **SQLModel** (PostgreSQL) | Type-safe ORM that combines Pydantic validation with SQL power. |
+| **AI (Speech)** | **AssemblyAI** | Best-in-class medical dictation support with Speaker Diarization. |
+| **AI (Logic)** | **Google Gemini 2.5 Flash** | Low-latency clinical reasoning and JSON-structured output. |
+| **Security** | **OAuth2 + JWT** | Stateless authentication with Role-Based Access Control (RBAC). |
+
+---
+
+## ✨ features of the MVP
+We have delivered a fully functional **Minimum Viable Product** with end-to-end clinical workflows.
+
+### 👩‍⚕️ Doctor Portal
+*   **Live Patient Queue**: Real-time list of waiting patients, sorted by urgency (Critical > High > Moderate).
+*   **One-Click Action**: "Consult", "Review History", and "Discharge" buttons accessible in < 2 clicks.
+*   **Safety Alerts**: Visual Warning Banners (Red/Yellow) for drug interactions or critical lab values.
+*   **Full-Height Console**: A responsive, fixed-layout dashboard designed for clinical monitors.
+
+### 🧠 The AI Engine
+*   **Smart Transcription**: Converts raw audio to text with >96% accuracy (normalized).
+*   **Speaker Diarization**: Automatically distinguishes between "Doctor" and "Patient" voices.
+*   **structured SOAP Notes**:
+    *   **S**ubjective: Patient's complaints.
+    *   **O**bjective: Vitals and Observations.
+    *   **A**ssessment: Preliminary Diagnosis.
+    *   **P**lan: Treatment & Prescriptions.
+*   **Triage Logic**: Auto-calculates an `Urgency Score` (0-100) based on keywords (e.g., "Stroke" = 95).
+
+### 🛡️ Security & Reliability
+*   **Role-Based Access**: Strict separation between `Admin`, `Doctor`, and `Patient` views.
+*   **Identity Redaction**: PII (Names, Phones) is masked before sending data to LLMs.
+*   **Fault Tolerance**:
+    *   **Failure Queue**: If AI processing fails, the patient is moved to a "Manual Review" list, ensuring no data loss.
+    *   **Retry Logic**: Automatic exponential backoff for API rate limits.
+
+---
+
+## �📈 The Accuracy Journey (26% → 96%)
 Our initial tests showed low accuracy (26%) which was alarming. **Forensic Analysis** proved this was a false alarm.
 
 | Stage | Accuracy | Insight |
