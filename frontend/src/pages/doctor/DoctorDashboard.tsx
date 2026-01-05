@@ -9,12 +9,15 @@ import { AddPatientModal } from "@/components/doctor/AddPatientModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, UserPlus, Clock, LayoutDashboard } from "lucide-react";
 
+import { DashboardOverview } from "@/components/doctor/DashboardWidgets";
+
 export default function DoctorDashboard() {
     // State for selected patient from Queue
     const [selectedConsultation, setSelectedConsultation] = useState<string | null>(null);
     const [patientName, setPatientName] = useState<string | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'queue' | 'history'>('queue');
+    const [queueCount, setQueueCount] = useState(0);
 
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -23,14 +26,14 @@ export default function DoctorDashboard() {
     const handleSelectPatient = (id: string, name: string) => {
         setSelectedConsultation(id);
         setPatientName(name);
-        setViewMode('queue'); // Ensure we switch back if selecting from somewhere else
+        setViewMode('queue');
     };
 
     // Handler when consultation is finished
     const handleConsultationComplete = () => {
         setSelectedConsultation(null);
         setPatientName(null);
-        // Ideally, trigger a refresh of QueueList here
+        setQueueCount(prev => Math.max(0, prev - 1)); // Optimistic update
     };
 
     const handleLogout = () => {
@@ -79,7 +82,7 @@ export default function DoctorDashboard() {
                     isOpen={isAddModalOpen}
                     onClose={() => setIsAddModalOpen(false)}
                     onSuccess={() => {
-                        // Refresh queue if possible
+                        // QueueList polls, so it will update eventually
                     }}
                     doctorId={user?.id || ""}
                 />
@@ -95,24 +98,32 @@ export default function DoctorDashboard() {
                     <div className="grid grid-cols-12 gap-6 h-full">
                         {/* LEFT COLUMN: Queue Management */}
                         <div className="col-span-3 h-full overflow-hidden flex flex-col gap-2">
-                            {/* 1. The Main Priority Queue - Takes all available space */}
+                            {/* 1. The Main Priority Queue */}
                             <div className="flex-1 min-h-0 overflow-hidden">
-                                <QueueList onSelect={handleSelectPatient} selectedId={selectedConsultation} />
+                                <QueueList
+                                    onSelect={handleSelectPatient}
+                                    selectedId={selectedConsultation}
+                                    onQueueUpdate={setQueueCount}
+                                />
                             </div>
 
-                            {/* 2. The Safety Valve (Manual Review) - Anchored at bottom */}
+                            {/* 2. The Safety Valve */}
                             <div className="flex-shrink-0">
                                 <FailureQueue onSelect={handleSelectPatient} />
                             </div>
                         </div>
 
-                        {/* RIGHT COLUMN: Active Workspace */}
+                        {/* RIGHT COLUMN: Active Workspace or Dashboard Overview */}
                         <div className="col-span-9 h-full overflow-y-auto">
-                            <ActiveConsultation
-                                consultationId={selectedConsultation}
-                                patientName={patientName}
-                                onComplete={handleConsultationComplete}
-                            />
+                            {selectedConsultation ? (
+                                <ActiveConsultation
+                                    consultationId={selectedConsultation}
+                                    patientName={patientName}
+                                    onComplete={handleConsultationComplete}
+                                />
+                            ) : (
+                                <DashboardOverview queueLength={queueCount} />
+                            )}
                         </div>
                     </div>
                 )}

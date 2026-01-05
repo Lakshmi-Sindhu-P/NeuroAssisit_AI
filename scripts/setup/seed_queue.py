@@ -16,14 +16,26 @@ def seed_queue():
             print("❌ Doctor not found. Run basic seed first.")
             return
 
-        # 2. Patient Data (5 diverse cases)
+        # 2. Patient Data (10 diverse cases for stress testing)
         patients_config = [
             # (First, Last, Complaint, Category, Urgency, Warning Count)
-            ("Liam", "Neeson", "Sudden memory loss", TriageCategory.CRITICAL, 95, 1),
-            ("Sarah", "Connor", "Tremors in hand", TriageCategory.HIGH, 75, 0),
-            ("Tony", "Stark", "Chest pain (minor)", TriageCategory.MODERATE, 60, 1),
-            ("Bruce", "Banner", "Stress/Anger issues", TriageCategory.LOW, 30, 0),
-            ("Wanda", "Maximoff", "Visual Hullucinations", TriageCategory.HIGH, 80, 1)
+            # CRITICAL
+            ("Logan", "Howlett", "Slurred speech, face drooping, left side weakness", TriageCategory.CRITICAL, 98, 0), # Stroke
+            ("Steve", "Rogers", "Crushing chest pain radiating to jaw", TriageCategory.CRITICAL, 95, 1), # STEMI
+            ("Peter", "Parker", "Throat closing up, ate peanuts", TriageCategory.CRITICAL, 92, 1), # Anaphylaxis
+            ("Wade", "Wilson", "High fever 104F, confusion, low BP", TriageCategory.CRITICAL, 90, 0), # Sepsis
+            
+            # HIGH
+            ("Wanda", "Maximoff", "Visual Hullucinations, hearing voices", TriageCategory.HIGH, 80, 1), # Psych
+            ("Sarah", "Connor", "Tremors in hand, difficulty walking", TriageCategory.HIGH, 75, 0), # Neuro
+            
+            # MODERATE
+            ("Tony", "Stark", "Mild palpitations, anxiety", TriageCategory.MODERATE, 60, 1),
+            ("Natasha", "Romanoff", "Migraine with aura, light sensitivity", TriageCategory.MODERATE, 55, 0),
+            
+            # LOW
+            ("Bruce", "Banner", "Chronic back pain, needing refill", TriageCategory.LOW, 30, 0),
+            ("Clint", "Barton", "Ringing in ears (Tinnitus)", TriageCategory.LOW, 25, 0)
         ]
         
         for first, last, reason, triage, urgency, warnings_count in patients_config:
@@ -39,7 +51,7 @@ def seed_queue():
                 
                 profile = PatientProfile(
                     user_id=user.id, first_name=first, last_name=last,
-                    date_of_birth=datetime(1985, 5, 20), gender="Male" if first != "Sarah" and first != "Wanda" else "Female",
+                    date_of_birth=datetime(1980, 1, 1), gender="Male" if first not in ["Wanda", "Sarah", "Natasha"] else "Female",
                     medical_history="Recorded history."
                 )
                 session.add(profile)
@@ -55,31 +67,35 @@ def seed_queue():
             session.commit()
             session.refresh(appt)
             
-            # Create Consultation (Queue Ready)
-            # Status MUST be COMPLETED (AI done) and end_time MUST be None
-            # Simulate Safety Warnings
             # Simulate Safety Warnings
             warnings = []
-            if first == "Tony":
+            if first == "Steve": # STEMI
+                warnings.append({
+                    "type": "CONTRAINDICATION", 
+                    "message": "Protocol Alert: Immediate ECG required. Door-to-Balloon time critical.", 
+                    "drug": "Protocol", 
+                    "condition": "STEMI"
+                })
+            elif first == "Peter": # Anaphylaxis
+                warnings.append({
+                    "type": "CRITICAL", 
+                    "message": "Airway Risk: Prepare Epinephrine immediately.", 
+                    "drug": "Peanuts", 
+                    "condition": "Anaphylaxis"
+                })
+            elif first == "Tony":
                 warnings.append({
                     "type": "CAUTION", 
-                    "message": "Potential Interaction: Nitrates (for chest pain) are contraindicated with PDE5 inhibitors (if prescribed). Verify medication history.", 
+                    "message": "Potential Interaction: Nitrates contraindicated if on PDE5 inhibitors.", 
                     "drug": "Nitroglycerin", 
                     "condition": "Angina"
                 })
             elif first == "Wanda":
                  warnings.append({
                     "type": "CAUTION", 
-                    "message": "QT Prolongation Risk: Antipsychotics may prolong QT interval. Monitor ECG.", 
+                    "message": "QT Prolongation Risk: Monitor ECG with Antipsychotics.", 
                     "drug": "Quetiapine", 
                     "condition": "Psychosis"
-                })
-            elif first == "Liam":
-                 warnings.append({
-                    "type": "CONTRAINDICATION", 
-                    "message": "High Bleeding Risk: Patient on Warfarin. Avoid NSAIDs.", 
-                    "drug": "Warfarin", 
-                    "condition": "Atrial Fibrillation"
                 })
 
             consult = Consultation(

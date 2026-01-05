@@ -84,7 +84,7 @@ def get_consultation(
         .options(
             selectinload(Consultation.audio_file), 
             selectinload(Consultation.soap_note),
-            selectinload(Consultation.appointment)
+            selectinload(Consultation.appointment).selectinload(Appointment.patient).selectinload(User.patient_profile)
         )
     ).first()
     
@@ -117,6 +117,24 @@ def get_my_consultations(
             selectinload(Consultation.audio_file), 
             selectinload(Consultation.soap_note),
             selectinload(Consultation.appointment).selectinload(Appointment.patient).selectinload(User.patient_profile)
+        ).order_by(Consultation.created_at.desc())
+    ).all()
+    return results
+
+    return results
+
+@router.get("/patient/{patient_id}", response_model=List[ConsultationRead])
+def get_patient_consultations(
+    patient_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(RoleChecker([UserRole.DOCTOR, UserRole.FRONT_DESK]))
+):
+    results = session.exec(
+        select(Consultation)
+        .where(Consultation.patient_id == patient_id)
+        .options(
+             selectinload(Consultation.soap_note),
+             selectinload(Consultation.appointment)
         ).order_by(Consultation.created_at.desc())
     ).all()
     return results

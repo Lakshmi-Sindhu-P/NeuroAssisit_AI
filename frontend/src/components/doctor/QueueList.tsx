@@ -20,7 +20,7 @@ interface QueueItem {
     safety_warnings: any[];
 }
 
-export function QueueList({ onSelect, selectedId }: { onSelect: (id: string, name: string) => void, selectedId: string | null }) {
+export function QueueList({ onSelect, selectedId, onQueueUpdate }: { onSelect: (id: string, name: string) => void, selectedId: string | null, onQueueUpdate?: (count: number) => void }) {
     const [queue, setQueue] = useState<QueueItem[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -28,6 +28,7 @@ export function QueueList({ onSelect, selectedId }: { onSelect: (id: string, nam
         try {
             const res = await api.get("/dashboard/queue");
             setQueue(res.data);
+            if (onQueueUpdate) onQueueUpdate(res.data.length);
         } catch (err) {
             console.error("Failed to load queue", err);
         } finally {
