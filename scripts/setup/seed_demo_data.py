@@ -93,7 +93,8 @@ def seed_data():
             # Yes, Triage Service completes the "Triage" phase.
             urgency_score=95, triage_category=TriageCategory.CRITICAL,
             created_at=datetime.utcnow() - timedelta(minutes=10),
-            safety_warnings=[{"type": "CAUTION", "message": "Risk of Stroke", "drug": "", "condition": ""}] 
+            safety_warnings=[{"type": "CAUTION", "message": "Risk of Stroke", "drug": "", "condition": ""}],
+            risk_flags=["Potential Stroke", "High Urgency"]
         )
         session.add(cons1)
         
@@ -110,7 +111,8 @@ def seed_data():
             appointment_id=appt2.id, patient_id=appt2.patient_id, doctor_id=appt2.doctor_id,
             status=ConsultationStatus.COMPLETED,
             urgency_score=60, triage_category=TriageCategory.MODERATE,
-            created_at=datetime.utcnow() - timedelta(minutes=45)
+            created_at=datetime.utcnow() - timedelta(minutes=45),
+            risk_flags=["Moderate Pain", "Dizziness"]
         )
         session.add(cons2)
 

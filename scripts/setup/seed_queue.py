@@ -105,6 +105,7 @@ def seed_queue():
                 triage_category=triage,
                 safety_warnings=warnings,
                 end_time=None, # Explicitly NOT finished by doctor
+                risk_flags=["Critical Symptom"] if triage == TriageCategory.CRITICAL else ["Routine"] if triage == TriageCategory.LOW else ["Monitoring"],
                 created_at=datetime.utcnow() - timedelta(minutes=random.randint(5, 120))
             )
             session.add(consult)

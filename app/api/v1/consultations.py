@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlmodel import Session, select
 from app.core.db import get_session
-from app.models.base import Consultation, ConsultationStatus, Appointment, User, UserRole, AudioFile, SOAPNote, AudioUploaderType
+from app.models.base import Consultation, ConsultationStatus, Appointment, User, UserRole, AudioFile, SOAPNote, AudioUploaderType, AudioFileType
 from app.api.deps import get_current_user, RoleChecker
 from pydantic import BaseModel
 from typing import Optional, List, Any
@@ -27,9 +27,10 @@ class ConsultationRead(BaseModel):
     doctor_id: UUID
     appointment_id: UUID
     appointment: Optional[Any] = None
-    audio_file: Optional[Any] = None
+    audio_files: List[Any] = []
     soap_note: Optional[Any] = None
     safety_warnings: Optional[List[dict]] = None
+    risk_flags: Optional[List[str]] = None
     notes: Optional[str] = None
     diagnosis: Optional[str] = None
     prescription: Optional[str] = None
@@ -82,7 +83,7 @@ def get_consultation(
         select(Consultation)
         .where(Consultation.id == id)
         .options(
-            selectinload(Consultation.audio_file), 
+            selectinload(Consultation.audio_files), 
             selectinload(Consultation.soap_note),
             selectinload(Consultation.appointment).selectinload(Appointment.patient).selectinload(User.patient_profile)
         )
@@ -114,7 +115,7 @@ def get_my_consultations(
         
     results = session.exec(
         statement.options(
-            selectinload(Consultation.audio_file), 
+            selectinload(Consultation.audio_files), 
             selectinload(Consultation.soap_note),
             selectinload(Consultation.appointment).selectinload(Appointment.patient).selectinload(User.patient_profile)
         ).order_by(Consultation.created_at.desc())
@@ -144,6 +145,7 @@ async def upload_audio(
     id: UUID,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    source: str = "PRE_VISIT", # PRE_VISIT or CONSULTATION
     session: Session = Depends(get_session),
     current_user: User = Depends(RoleChecker([UserRole.DOCTOR, UserRole.PATIENT]))
 ):
@@ -164,12 +166,19 @@ async def upload_audio(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
         
+    # Determine File Type
+    try:
+        file_type = AudioFileType(source)
+    except ValueError:
+        file_type = AudioFileType.PRE_VISIT
+
     # Create AudioFile Record
     uploader_type = AudioUploaderType.DOCTOR if current_user.role == UserRole.DOCTOR else AudioUploaderType.PATIENT
     audio_file = AudioFile(
         id=file_id,
         consultation_id=id,
         uploaded_by=uploader_type,
+        file_type=file_type,
         file_name=file.filename,
         file_url=file_path,
         mime_type=file.content_type

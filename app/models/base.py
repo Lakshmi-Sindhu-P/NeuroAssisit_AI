@@ -17,6 +17,11 @@ class AppointmentStatus(str, Enum):
     CANCELLED = "CANCELLED"
     NO_SHOW = "NO_SHOW"
 
+class PaymentStatus(str, Enum):
+    PENDING = "PENDING"
+    PAID = "PAID"
+    WAIVED = "WAIVED"
+
 class User(SQLModel, table=True):
     __tablename__ = "users"
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
@@ -86,6 +91,7 @@ class Appointment(SQLModel, table=True):
     scheduled_at: datetime = Field(index=True)
     reason: Optional[str] = None
     status: AppointmentStatus = Field(default=AppointmentStatus.SCHEDULED, index=True)
+    payment_status: PaymentStatus = Field(default=PaymentStatus.PENDING)
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -133,19 +139,26 @@ class Consultation(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     appointment: Appointment = Relationship(back_populates="consultation")
-    audio_file: Optional["AudioFile"] = Relationship(back_populates="consultation", sa_relationship_kwargs={"uselist": False})
+    audio_files: List["AudioFile"] = Relationship(back_populates="consultation")
     soap_note: Optional["SOAPNote"] = Relationship(back_populates="consultation", sa_relationship_kwargs={"uselist": False})
+    
+    risk_flags: Optional[List[str]] = Field(default=None, sa_column=Column(JSON))
 
 class AudioUploaderType(str, Enum):
     PATIENT = "PATIENT"
     DOCTOR = "DOCTOR"
     SYSTEM = "SYSTEM"
 
+class AudioFileType(str, Enum):
+    PRE_VISIT = "PRE_VISIT"
+    CONSULTATION = "CONSULTATION"
+
 class AudioFile(SQLModel, table=True):
     __tablename__ = "audio_files"
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    consultation_id: UUID = Field(foreign_key="consultations.id", unique=True)
+    consultation_id: UUID = Field(foreign_key="consultations.id", index=True) # Removed unique=True
     uploaded_by: AudioUploaderType = Field()
+    file_type: AudioFileType = Field(default=AudioFileType.PRE_VISIT)
     file_name: str
     file_url: str
     file_size: Optional[int] = None
@@ -154,7 +167,7 @@ class AudioFile(SQLModel, table=True):
     transcription: Optional[str] = None # Text field
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
 
-    consultation: Consultation = Relationship(back_populates="audio_file")
+    consultation: Consultation = Relationship(back_populates="audio_files")
 
 class SOAPNote(SQLModel, table=True):
     __tablename__ = "soap_notes"
@@ -178,4 +191,15 @@ class AILog(SQLModel, table=True):
     status: str # SUCCESS, FAIL
     latency_ms: Optional[float] = None
     error_message: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class AuditLog(SQLModel, table=True):
+    __tablename__ = "audit_logs"
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    action: str # VIEW, CREATE, UPDATE, DELETE
+    resource_type: str # CONSULTATION, PATIENT, etc.
+    resource_id: str
+    details: Optional[str] = None
+    ip_address: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)

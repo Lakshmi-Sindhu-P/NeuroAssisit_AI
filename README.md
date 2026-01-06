@@ -16,6 +16,8 @@ By integrating **AssemblyAI** (Speech-to-Text) with **Google Gemini 2.5 Flash** 
 *   ✅ **Clinical Triage Engine**: Auto-detects "Stroke", "Suicide Risk", or "Severe Pain" and flags urgency.
 *   ✅ **Identity-Redacted Privacy**: Filters names/phones but preserves "Seizure" and "Donepezil".
 *   ✅ **Doctor Console v2**: Full-Screen Dashboard with "Patient Queue", "Safety Alerts", and "One-Click Signing".
+*   ✅ **Doctor-Initiated Recording**: Dedicated logic to differentiate "Patient Voice Notes" from "Clinical Consultations".
+*   ✅ **Risk-Aware Queue**: Intelligent sorting based on `Risk Flags` (e.g. "Potential Stroke").
 *   ✅ **Resilient Architecture**: Auto-retries on API failures + Persistent PostgreSQL State.
 
 ---
@@ -57,6 +59,7 @@ We have delivered a fully functional **Minimum Viable Product** with end-to-end 
 *   **Live Patient Queue**: Real-time list of waiting patients, sorted by urgency (Critical > High > Moderate).
 *   **One-Click Action**: "Consult", "Review History", and "Discharge" buttons accessible in < 2 clicks.
 *   **Safety Alerts**: Visual Warning Banners (Red/Yellow) for drug interactions or critical lab values.
+*   **Consultation Recording**: Integrated audio capture for full-length doctor-patient interactions (with Diarization).
 *   **Full-Height Console**: A responsive, fixed-layout dashboard designed for clinical monitors.
 
 ### 🏥 Front Desk & Triage (Admin)
@@ -117,7 +120,8 @@ We didn't just call APIs; we engineered a pipeline:
 
 ### 2. The Consultation
 *   Doctor selects patient.
-*   **Uploads Audio** (e.g., `4-audio.aac`).
+*   Doctor selects patient.
+*   **Initiates Recording**: Clicks "Upload Consultation Audio" (or "Start Recording").
 *   System shows **"AI Processing..."** (Async task triggers).
 
 ### 3. Review & Sign

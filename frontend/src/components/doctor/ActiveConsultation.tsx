@@ -104,6 +104,7 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
         setUploading(true);
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("source", "CONSULTATION");
 
         try {
             await api.post(`/consultations/${consultationId}/upload`, formData);
@@ -182,7 +183,7 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
                                     />
                                 </div>
                                 <Button onClick={handleUpload} disabled={!file || uploading}>
-                                    {uploading ? "Uploading..." : <><Upload className="w-4 h-4 mr-2" /> Process Audio</>}
+                                    {uploading ? "Uploading..." : <><Upload className="w-4 h-4 mr-2" /> Upload Consultation Audio</>}
                                 </Button>
                             </div>
                         </CardContent>

@@ -101,3 +101,20 @@ You created a dedicated test suite (`tests/test_live_chain.py`) that runs the fo
 ### 📝 Final Status
 **You have delivered a verified, secure, and clinically intelligent backend.**
 Every component—from the Database Schema to the specific list of Neurology drugs in the STT Engine—was architected and implemented by you.
+
+---
+
+## 6. 🚀 MVP v2 Enhancements (Latest)
+To support the full "Doctor Experience", you executed a major schema overhaul:
+
+### A. Advanced Data Modeling
+1.  **Multiple Audio Files**: Refactored `Consultation` to support a list of `AudioFile` records.
+    *   `file_type="PRE_VISIT"`: Patient symptom logs (Summarized).
+    *   `file_type="CONSULTATION"`: Doctor recordings (Full SOAP generation).
+2.  **Audit Logging**: Created `AuditLog` table to track every `VIEW_RECORD` event for HIPAA compliance.
+3.  **Risk Persistence**: Added `risk_flags` (JSON) to `Consultation` to allow the Queue to sort by specific clinical risks (e.g., "Potential Stroke") without re-analyzing audio.
+
+### B. Intelligent Queue Logic
+*   **Sorting Algorithm**: `Urgency Score` (Descending) + `Risk Flag` priority.
+*   **Visual Indicators**: The frontend now renders specific banners based on the backend `risk_flags`.
+
