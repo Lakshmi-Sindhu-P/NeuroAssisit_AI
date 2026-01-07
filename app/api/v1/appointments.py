@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from app.core.db import get_session
-from app.models.base import Appointment, User, UserRole, AppointmentStatus
+from app.models.base import Appointment, User, UserRole, AppointmentStatus, Consultation, ConsultationStatus
 from app.api.deps import get_current_user
 from app.schemas.appointment import AppointmentCreate
 from datetime import datetime, timezone
@@ -23,7 +23,13 @@ def create_appointment(
          raise HTTPException(status_code=403, detail="Insufficient permissions")
     
     # Validate scheduled time is in the future
-    if payload.scheduled_at <= datetime.now(timezone.utc):
+    # Ensure both are timezone-aware or both are naive for comparison
+    now = datetime.now(timezone.utc)
+    scheduled = payload.scheduled_at
+    if scheduled.tzinfo is None:
+        scheduled = scheduled.replace(tzinfo=timezone.utc)
+        
+    if scheduled <= now:
         raise HTTPException(status_code=400, detail="Cannot book appointment in the past")
     
     # Merge symptoms from reason or notes
@@ -50,11 +56,32 @@ def create_appointment(
     session.commit()
     session.refresh(appointment)
     
+    # Create associated consultation automatically to sync with Doctor Queue
+    from app.services.triage_service import TriageService
+    triage_result = TriageService.evaluate_transcript(symptoms)
+    
+    consultation = Consultation(
+        appointment_id=appointment.id,
+        patient_id=appointment.patient_id,
+        doctor_id=appointment.doctor_id,
+        status=ConsultationStatus.SCHEDULED,
+        notes=symptoms,
+        urgency_score=triage_result["risk_score"],
+        triage_category=triage_result["triage_status"],
+        triage_reason=triage_result["reason"],
+        triage_source=triage_result.get("triage_source", "AI")
+    )
+    session.add(consultation)
+    session.commit()
+    session.refresh(consultation)
+    
     return {
         "id": str(appointment.id),
+        "consultation_id": str(consultation.id),
         "status": "confirmed",
         "scheduled_at": appointment.scheduled_at.isoformat(),
-        "doctor_name": appointment.doctor_name
+        "doctor_name": appointment.doctor_name,
+        "triage_category": triage_result["triage_status"].value if hasattr(triage_result["triage_status"], 'value') else str(triage_result["triage_status"])
     }
 
 @router.get("/me")

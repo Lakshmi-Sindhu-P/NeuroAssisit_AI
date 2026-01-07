@@ -1,133 +1,80 @@
 import { useState } from "react";
 import { QueueList } from "@/components/doctor/QueueList";
 import { FailureQueue } from "@/components/doctor/FailureQueue";
-import { ActiveConsultation } from "@/components/doctor/ActiveConsultation";
-import { ConsultationHistory } from "@/components/doctor/ConsultationHistory";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { AddPatientModal } from "@/components/doctor/AddPatientModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, UserPlus, Clock, LayoutDashboard } from "lucide-react";
-
+import { UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { DashboardOverview } from "@/components/doctor/DashboardWidgets";
 
 export default function DoctorDashboard() {
-    // State for selected patient from Queue
-    const [selectedConsultation, setSelectedConsultation] = useState<string | null>(null);
-    const [patientName, setPatientName] = useState<string | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [viewMode, setViewMode] = useState<'queue' | 'history'>('queue');
     const [queueCount, setQueueCount] = useState(0);
+    const [avgWaitTime, setAvgWaitTime] = useState(0);
 
     const navigate = useNavigate();
     const { user } = useAuth();
 
-    // Handler when clicking a patient in QueueList
-    const handleSelectPatient = (id: string, name: string) => {
-        setSelectedConsultation(id);
-        setPatientName(name);
-        setViewMode('queue');
+    // Stats calculations
+    const handleQueueUpdate = (count: number, avgWait: number) => {
+        setQueueCount(count);
+        setAvgWaitTime(avgWait);
     };
 
-    // Handler when consultation is finished
-    const handleConsultationComplete = () => {
-        setSelectedConsultation(null);
-        setPatientName(null);
-        setQueueCount(prev => Math.max(0, prev - 1)); // Optimistic update
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        navigate("/login");
+    // Navigate to the new Full Page Consultation
+    const handleSelectPatient = (id: string) => {
+        navigate(`/doctor/consultation/${id}`);
     };
 
     return (
-        <div className="h-screen bg-background flex flex-col overflow-hidden">
-            {/* Header */}
-            <header className="bg-white border-b px-6 py-3 flex justify-between items-center sticky top-0 z-10 flex-shrink-0">
-                <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">N</div>
-                    <h1 className="font-bold text-xl text-foreground">NeuroAssist <span className="text-muted-foreground font-normal">| Doctor Console</span></h1>
+        <div className="h-full flex flex-col gap-6">
+            {/* Page Header */}
+            <div className="flex justify-between items-center flex-shrink-0">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Dashboard Overview</h1>
+                    <p className="text-muted-foreground">Welcome back, Dr. {user?.firstName}.</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center bg-muted p-1 rounded-md">
-                        <Button
-                            variant={viewMode === 'queue' ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => setViewMode('queue')}
-                            className="text-xs"
-                        >
-                            <LayoutDashboard className="w-4 h-4 mr-1" /> Active
-                        </Button>
-                        <Button
-                            variant={viewMode === 'history' ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => setViewMode('history')}
-                            className="text-xs"
-                        >
-                            <Clock className="w-4 h-4 mr-1" /> History
-                        </Button>
-                    </div>
-
-                    <Button onClick={() => setIsAddModalOpen(true)} size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                        <UserPlus className="w-4 h-4 mr-2" /> Add Patient
-                    </Button>
-                    <span className="text-sm text-foreground">Dr. {user?.firstName || "Doctor"}</span>
-                    <Button variant="ghost" size="sm" onClick={handleLogout}>
-                        <LogOut className="w-4 h-4 mr-2" /> Logout
+                <div className="flex gap-2">
+                    <Button onClick={() => setIsAddModalOpen(true)} className="shadow-sm">
+                        <UserPlus className="w-4 h-4 mr-2" /> Quick Add Patient
                     </Button>
                 </div>
+            </div>
 
-                <AddPatientModal
-                    isOpen={isAddModalOpen}
-                    onClose={() => setIsAddModalOpen(false)}
-                    onSuccess={() => {
-                        // QueueList polls, so it will update eventually
-                    }}
-                    doctorId={user?.id || ""}
-                />
-            </header>
-
-            {/* Main Layout */}
-            <main className="flex-1 p-6 min-h-0 overflow-hidden">
-                {viewMode === 'history' ? (
-                    <div className="h-full overflow-hidden">
-                        <ConsultationHistory />
+            <div className="grid grid-cols-12 gap-8 flex-1 min-h-0">
+                {/* LEFT COLUMN: Queue Management */}
+                <div className="col-span-12 lg:col-span-4 h-full flex flex-col gap-4 overflow-hidden">
+                    {/* 1. The Main Priority Queue */}
+                    <div className="flex-1 min-h-0 overflow-hidden rounded-xl border bg-card shadow-sm">
+                        <QueueList
+                            onSelect={handleSelectPatient}
+                            selectedId={null}
+                            onQueueUpdate={handleQueueUpdate}
+                        />
                     </div>
-                ) : (
-                    <div className="grid grid-cols-12 gap-6 h-full">
-                        {/* LEFT COLUMN: Queue Management */}
-                        <div className="col-span-3 h-full overflow-hidden flex flex-col gap-2">
-                            {/* 1. The Main Priority Queue */}
-                            <div className="flex-1 min-h-0 overflow-hidden">
-                                <QueueList
-                                    onSelect={handleSelectPatient}
-                                    selectedId={selectedConsultation}
-                                    onQueueUpdate={setQueueCount}
-                                />
-                            </div>
 
-                            {/* 2. The Safety Valve */}
-                            <div className="flex-shrink-0">
-                                <FailureQueue onSelect={handleSelectPatient} />
-                            </div>
-                        </div>
-
-                        {/* RIGHT COLUMN: Active Workspace or Dashboard Overview */}
-                        <div className="col-span-9 h-full overflow-y-auto">
-                            {selectedConsultation ? (
-                                <ActiveConsultation
-                                    consultationId={selectedConsultation}
-                                    patientName={patientName}
-                                    onComplete={handleConsultationComplete}
-                                />
-                            ) : (
-                                <DashboardOverview queueLength={queueCount} />
-                            )}
-                        </div>
+                    {/* 2. The Safety Valve */}
+                    <div className="flex-shrink-0 rounded-xl border bg-card shadow-sm overflow-hidden max-h-[200px]">
+                        <FailureQueue onSelect={handleSelectPatient} />
                     </div>
-                )}
-            </main>
+                </div>
+
+                {/* RIGHT COLUMN: Widgets & Analytics */}
+                <div className="col-span-12 lg:col-span-8 h-full overflow-y-auto">
+                    <DashboardOverview queueLength={queueCount} avgWaitTime={avgWaitTime} />
+                </div>
+            </div>
+
+            <AddPatientModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onSuccess={() => {
+                    // QueueList polls, so it will update eventually. 
+                    // Could force refresh context if needed.
+                }}
+                doctorId={user?.id || ""}
+            />
         </div>
     );
 }

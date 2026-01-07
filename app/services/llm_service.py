@@ -15,6 +15,40 @@ logger = logging.getLogger(__name__)
 class GeminiService:
     @staticmethod
     @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2, min=4, max=30),
+        reraise=True
+    )
+    async def generate_clinical_document(document_type: str, soap_note: Dict[str, Any], patient_context: Dict[str, Any]) -> str:
+        """
+        Generates a clinical document (referral, certificate, etc.) based on the SOAP note.
+        """
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = f"""
+        You are an expert medical administrative assistant.
+        Draft a professional **{document_type}** based on the following consultation details.
+        
+        Patient: {patient_context.get('first_name')} {patient_context.get('last_name')} (Age: {patient_context.get('age')})
+        
+        SOAP Note Context:
+        Subjective: {soap_note.get('subjective')}
+        Objective: {soap_note.get('objective')}
+        Assessment: {soap_note.get('assessment')}
+        Plan: {soap_note.get('plan')}
+        
+        Requirements:
+        1. Use standard medical letter format.
+        2. Be concise but complete.
+        3. Include placeholders for [Date] or [Doctor Name] if not provided.
+        4. Return ONLY the text of the document, no markdown formatting blocks.
+        """
+        
+        response = await model.generate_content_async(prompt)
+        return response.text.strip()
+
+    @staticmethod
+    @retry(
         stop=stop_after_attempt(5), # Increased attempts for quota
         wait=wait_exponential(multiplier=2, min=4, max=60), # Exponential backoff: 4s, 8s, 16s, 32s, 60s
         reraise=True
@@ -46,9 +80,9 @@ class GeminiService:
                 f"Medical History/Notes: {patient_context.get('notes', 'None provided')}"
             )
             
-        # Initialize Model (gemini-2.5-flash is available and efficient)
+        # Initialize Model (Gemini 1.5 Flash - Verified & Requested)
         model = genai.GenerativeModel(
-            'gemini-2.5-flash',
+            'gemini-1.5-flash',
             generation_config={"response_mime_type": "application/json"}
         )
         
@@ -62,26 +96,41 @@ class GeminiService:
         {formatted_transcript}
         
         Instructions:
-        1. **Subjective**: Detailed narrative of patient's complaints, history of present illness. Use bullet points for symptoms.
-        2. **Objective**: Extract all observations, physical findings, and vitals. If none, state "No physical findings reported".
-        3. **Assessment**: Clear diagnosis or differential diagnoses based on the evidence.
-        4. **Plan**: Detailed treatment plan, including specific medications (name, dosage), behavioral advice, and follow-up instructions.
+        1. **Subjective**: COMPREHENSIVE narrative. Use a mix of paragraphs for history and BULLET POINTS for specific symptom lists.
+        2. **Objective**: Detailed observations. Use BULLET POINTS for findings.
+        3. **Assessment**: Detailed reasoning. Use text for explanation and BULLET POINTS for differential diagnoses.
+        4. **Plan**: Detailed steps. Use BULLET POINTS for each medication/instruction.
         5. **STRICT GROUNDING**: Do NOT invent information.
-        6. **Style**: Professional, concise text, but covers ALL points discussed.
+        6. **Style**: Comprehensive but structured. Easy to scan.
         7. **Format**: Return STRICTLY valid JSON.
+        8. **UI Summaries**: Create ULTRA-CONCISE drafts for the UI fields.
+           - **Diagnosis**: FINAL CONFIRMED DIAGNOSIS or PRIMARY WORKING IMPRESSION only. Do NOT list ruled-out differentials. Separated by ' | '.
+           - **Prescription**: KEYWORDS (Medication Name, Dose, Freq).
+           - **Notes**: MUST BE EMPTY STRING "".
+        9. **Demographics Extraction**: Extract if mentioned.
         
         Required JSON Structure:
         {{
             "soap_note": {{
-                "subjective": "Patient's presenting complaints, history of present illness...",
-                "objective": "Observations, physical findings (if mentioned), vitals...",
-                "assessment": "Diagnosis or differential diagnoses...",
-                "plan": "Treatment plan, medications, follow-up..."
+                "subjective": "Patient presents with...\\n- Symptom A\\n- Symptom B...",
+                "objective": "- BP 120/80\\n- Clear lungs",
+                "assessment": "The clinical picture suggests...\\n- Differential 1",
+                "plan": "- Med X 500mg\\n- Follow up 2w"
+            }},
+            "ui_summary": {{
+                "diagnosis": "- Condition A",
+                "prescription": "- Med X 500mg BID\\n- MRI Brain",
+                "notes": "" 
+            }},
+            "demographics": {{
+                "age": 45, 
+                "gender": "Male" 
             }},
             "low_confidence": ["list", "of", "ambiguous", "terms"],
             "risk_flags": ["Risk 1", "Risk 2"] 
         }}
         """
+
         
         # Offload the blocking API call to a thread
         loop = asyncio.get_event_loop()
@@ -113,3 +162,50 @@ class GeminiService:
                  raise Exception("Failed to generate valid JSON SOAP note")
         except Exception as e:
             raise Exception(f"Gemini generation failed: {str(e)}")
+
+    @staticmethod
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2, min=4, max=30),
+        reraise=True
+    )
+    async def generate_prescription_digitization(image_path: str) -> Dict[str, Any]:
+        """
+        Analyzes a medical prescription image using Gemini Vision to extract structured medication data.
+        """
+        try:
+            # Load the image
+            # Gemini 1.5/2.5 Flash supports image inputs directly via path or bytes
+            # We'll use the file API for safety or direct upload object if needed, 
+            # but for simplicity/speed with local files, we can upload to File API or pass data.
+            # python-generativeai allows passing PIL images or path objects.
+            
+            # Note: For efficient handling, 'genai.upload_file' is recommended for larger media, 
+            # but for single page Rx, we can check library support. 
+            # Let's use the File API which is standard for recent Gemini versions.
+            
+            print(f"   (Gemini) Uploading file for vision analysis: {image_path}")
+            uploaded_file = genai.upload_file(image_path)
+            
+            model = genai.GenerativeModel('gemini-2.0-flash-exp') # Or 1.5-flash if 2.5 not available yet via standard key in this env
+
+            prompt = "Analyze this prescription and extract medications in JSON."
+            
+            # Offload blocking call
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: model.generate_content([prompt, uploaded_file])
+            )
+            
+            # Clean up file? (Optional but good practice if API allows, though usually auto-managed or small quota)
+            
+            try:
+                text = response.text.replace("```json", "").replace("```", "").strip()
+                return json.loads(text)
+            except:
+                return {"raw_text": response.text, "error": "Failed to parse JSON"}
+                
+        except Exception as e:
+            logger.error(f"Prescription OCR failed: {e}")
+            raise e

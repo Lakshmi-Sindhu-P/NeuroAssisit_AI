@@ -1,21 +1,23 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  MapPin, 
-  Mic, 
-  MicOff, 
-  Play, 
-  Pause, 
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  MapPin,
+  Mic,
+  MicOff,
+  Play,
+  Pause,
   Square,
   RefreshCw,
   Shield,
   CheckCircle2,
   Brain,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,30 +27,29 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { formatDoctorName } from "@/lib/formatName";
 
 const timeSlots = [
-  "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
-  "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM"
+  "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+  "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM",
+  "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM",
+  "05:00 PM", "05:30 PM"
 ];
-
-const doctorInfo = {
-  name: "Dr. Ananya Sharma",
-  specialization: "Neurologist",
-  location: "NeuroAssist Clinic, Bengaluru",
-  image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face",
-};
 
 export default function BookAppointment() {
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+  const { user } = useAuth();
+
   // Step State (1 = Date & Time, 2 = Record Symptoms)
   const [currentStep, setCurrentStep] = useState(1);
-  
+
   // Date & Time State
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  
+
   // Recording State
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -58,10 +59,34 @@ export default function BookAppointment() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [waveformData, setWaveformData] = useState<number[]>(new Array(30).fill(0.1));
   const [additionalNotes, setAdditionalNotes] = useState("");
-  
+
   // Booking State
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
+  const [consultationId, setConsultationId] = useState<string | null>(null);
+
+  // Transcription State (Editable Transcription Flow)
+  const [transcriptionText, setTranscriptionText] = useState("");
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
+  const [showTranscription, setShowTranscription] = useState(false);
+
+  // Fetch doctors on mount
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        // Use patient-specific endpoint that only returns AVAILABLE doctors
+        const data = await apiRequest("/patient/doctors");
+        setDoctors(data);
+        if (data.length > 0) setSelectedDoctor(data[0]);
+      } catch (e) {
+        console.error("Failed to fetch doctors", e);
+      }
+    };
+    fetchDoctors();
+  }, []);
+
   // Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -83,11 +108,11 @@ export default function BookAppointment() {
     if (analyserRef.current && isRecording && !isPaused) {
       const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
       analyserRef.current.getByteFrequencyData(dataArray);
-      
+
       const samples = 30;
       const blockSize = Math.floor(dataArray.length / samples);
       const newWaveform = [];
-      
+
       for (let i = 0; i < samples; i++) {
         let sum = 0;
         for (let j = 0; j < blockSize; j++) {
@@ -96,7 +121,7 @@ export default function BookAppointment() {
         const normalized = (sum / blockSize) / 255;
         newWaveform.push(Math.max(0.1, normalized));
       }
-      
+
       setWaveformData(newWaveform);
       animationFrameRef.current = requestAnimationFrame(updateWaveform);
     }
@@ -106,14 +131,14 @@ export default function BookAppointment() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      
+
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
       source.connect(analyser);
       analyserRef.current = analyser;
-      
+
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
@@ -130,19 +155,22 @@ export default function BookAppointment() {
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         stream.getTracks().forEach(track => track.stop());
+
+        // CRITICAL: Immediately trigger transcription when recording stops
+        transcribeRecordingNow(blob);
       };
 
       mediaRecorder.start();
       setIsRecording(true);
       setIsPaused(false);
       setRecordingTime(0);
-      
+
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
-      
+
       animationFrameRef.current = requestAnimationFrame(updateWaveform);
-      
+
     } catch (error) {
       toast({
         title: "Microphone Access Required",
@@ -177,10 +205,10 @@ export default function BookAppointment() {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsPaused(false);
-      
+
       if (timerRef.current) clearInterval(timerRef.current);
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      
+
       setWaveformData(new Array(30).fill(0.3));
     }
   };
@@ -203,6 +231,48 @@ export default function BookAppointment() {
     setIsPlaying(false);
     setIsPaused(false);
     setWaveformData(new Array(30).fill(0.1));
+    // Reset transcription state
+    setTranscriptionText("");
+    setTranscriptionError(null);
+    setShowTranscription(false);
+  };
+
+  // Transcribe recording using standalone STT endpoint (no consultation_id needed)
+  const transcribeRecordingNow = async (blob: Blob) => {
+    setIsTranscribing(true);
+    setTranscriptionError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', blob, 'symptom_recording.webm');
+
+      const token = localStorage.getItem('neuroassist_token');
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/consultations/stt/transcribe-audio`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Transcription failed');
+      }
+
+      const data = await response.json();
+      setTranscriptionText(data.transcription || "");
+      setShowTranscription(true);
+      console.log("Transcription completed:", data.transcription?.substring(0, 100));
+    } catch (error: any) {
+      console.error("Transcription error:", error);
+      setTranscriptionError(error.message || "Failed to transcribe audio. Please try recording again.");
+    } finally {
+      setIsTranscribing(false);
+    }
   };
 
   const handleConfirmDateTime = () => {
@@ -221,26 +291,137 @@ export default function BookAppointment() {
     return `NA-${year}-${randomNum}`;
   };
 
+  // Check if a time slot is in the past (for today's date)
+  const isTimeSlotPast = (time: string) => {
+    if (!date) return false;
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    if (!isToday) return false;
+
+    // Parse time like "09:00 AM" to hours
+    const [timePart, ampm] = time.split(' ');
+    let [hours, minutes] = timePart.split(':').map(Number);
+    if (ampm === 'PM' && hours !== 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+
+    const slotTime = new Date(today);
+    slotTime.setHours(hours, minutes, 0, 0);
+
+    return slotTime <= today;
+  };
+
   const handleSubmitSymptoms = async () => {
+    if (!date || !selectedTime || !selectedDoctor) {
+      toast({ title: "Missing Info", description: "Please complete all fields.", variant: "destructive" });
+      return;
+    }
+
+    // Validate transcription if audio was recorded
+    if (audioBlob && showTranscription && !transcriptionText.trim()) {
+      toast({ title: "Empty Transcription", description: "Please review and ensure the transcription is not empty.", variant: "destructive" });
+      return;
+    }
+
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const bookingData = {
-      date: date!,
-      time: selectedTime!,
-      doctorName: doctorInfo.name,
-      specialization: doctorInfo.specialization,
-      location: doctorInfo.location,
-      audioUrl: audioUrl || undefined,
-      notes: additionalNotes || undefined,
-      bookingId: generateBookingId(),
-    };
-    
-    setIsSubmitting(false);
-    navigate("/dashboard/appointment-confirmed", { 
-      state: { bookingData },
-      replace: true // Prevent back navigation to booking form
-    });
+    try {
+      // Parse time and combine with date
+      const [timePart, ampm] = selectedTime.split(' ');
+      let [hours, minutes] = timePart.split(':').map(Number);
+      if (ampm === 'PM' && hours !== 12) hours += 12;
+      if (ampm === 'AM' && hours === 12) hours = 0;
+
+      const scheduledAt = new Date(date);
+      scheduledAt.setHours(hours, minutes, 0, 0);
+
+      // Validate time is in future
+      if (scheduledAt <= new Date()) {
+        toast({ title: "Invalid Time", description: "Cannot book appointment in the past.", variant: "destructive" });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create appointment (this also creates a consultation)
+      const res = await apiRequest("/appointments/", {
+        method: "POST",
+        body: JSON.stringify({
+          patient_id: user?.id,
+          doctor_id: selectedDoctor.id,
+          doctor_name: formatDoctorName(selectedDoctor.first_name, selectedDoctor.last_name),
+          scheduled_at: scheduledAt.toISOString(),
+          reason: transcriptionText || additionalNotes || "General consultation",
+          notes: additionalNotes
+        })
+      });
+
+      const createdConsultationId = res.consultation_id;
+      let triageResult = null;
+
+      // If audio was recorded and transcription exists, submit the edited transcript
+      if (audioBlob && showTranscription && transcriptionText.trim() && createdConsultationId) {
+        try {
+          // First, upload the audio file to create the AudioFile record
+          const formData = new FormData();
+          formData.append('file', audioBlob, 'symptom_recording.webm');
+
+          const token = localStorage.getItem('neuroassist_token');
+
+          // Upload and transcribe (we already have transcription, but need to save audio)
+          await fetch(
+            `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/consultations/${createdConsultationId}/transcribe`,
+            {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` },
+              body: formData
+            }
+          );
+
+          // Then submit the patient-edited transcript as final
+          const submitResponse = await fetch(
+            `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/consultations/${createdConsultationId}/submit-symptoms`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                final_transcript: transcriptionText.trim(),
+                additional_notes: additionalNotes || null
+              })
+            }
+          );
+
+          if (submitResponse.ok) {
+            triageResult = await submitResponse.json();
+            console.log("Symptoms submitted with triage:", triageResult);
+          }
+        } catch (symptomError) {
+          console.error("Symptom submission error:", symptomError);
+          // Continue with booking even if symptom submission fails
+        }
+      }
+
+      const bookingData = {
+        date: date,
+        time: selectedTime,
+        doctorName: formatDoctorName(selectedDoctor.first_name, selectedDoctor.last_name),
+        specialization: selectedDoctor.specialization || "General",
+        location: "NeuroAssist Clinic",
+        audioUrl: audioUrl || undefined,
+        notes: additionalNotes || undefined,
+        bookingId: res.id,
+        triageCategory: triageResult?.triage_category || res.triage_category
+      };
+
+      navigate("/dashboard/appointment-confirmed", {
+        state: { bookingData },
+        replace: true
+      });
+    } catch (error: any) {
+      toast({ title: "Booking Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -268,13 +449,13 @@ export default function BookAppointment() {
           <Brain className="h-8 w-8" />
           <span className="text-2xl font-bold">NeuroAssist</span>
         </div>
-        
+
         {/* Step Indicator */}
         <div className="flex items-center justify-center gap-4 mt-6">
           <div className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-            currentStep === 1 
-              ? "bg-primary text-primary-foreground" 
+            currentStep === 1
+              ? "bg-primary text-primary-foreground"
               : "bg-primary/10 text-primary"
           )}>
             <CalendarIcon className="h-4 w-4" />
@@ -283,8 +464,8 @@ export default function BookAppointment() {
           <div className="w-8 h-0.5 bg-border" />
           <div className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-            currentStep === 2 
-              ? "bg-primary text-primary-foreground" 
+            currentStep === 2
+              ? "bg-primary text-primary-foreground"
               : "bg-muted text-muted-foreground"
           )}>
             <Mic className="h-4 w-4" />
@@ -321,7 +502,14 @@ export default function BookAppointment() {
                       mode="single"
                       selected={date}
                       onSelect={setDate}
-                      disabled={(d) => d < new Date() || d.getDay() === 0}
+                      disabled={(d) => {
+                        // Compare date only (not time) - allow same-day bookings
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const compareDate = new Date(d);
+                        compareDate.setHours(0, 0, 0, 0);
+                        return compareDate < today || d.getDay() === 0;
+                      }}
                       className="rounded-xl border border-border/50 pointer-events-auto"
                     />
                   </div>
@@ -336,60 +524,81 @@ export default function BookAppointment() {
                     Select Time Slot (IST)
                   </CardTitle>
                   <CardDescription>
-                    {date 
-                      ? `Available slots for ${format(date, "d MMMM yyyy")}` 
+                    {date
+                      ? `Available slots for ${format(date, "d MMMM yyyy")}`
                       : "Please select a date first"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {timeSlots.map((time) => (
-                      <Button
-                        key={time}
-                        variant={selectedTime === time ? "default" : "outline"}
-                        className={cn(
-                          "h-12 transition-all font-medium",
-                          selectedTime === time && "ring-2 ring-primary/20 shadow-md"
-                        )}
-                        onClick={() => setSelectedTime(time)}
-                        disabled={!date}
-                      >
-                        <Clock className="h-4 w-4 mr-2" />
-                        {time}
-                      </Button>
-                    ))}
+                    {timeSlots.map((time) => {
+                      const isPast = isTimeSlotPast(time);
+                      return (
+                        <Button
+                          key={time}
+                          variant={selectedTime === time ? "default" : "outline"}
+                          className={cn(
+                            "h-12 transition-all font-medium",
+                            selectedTime === time && "ring-2 ring-primary/20 shadow-md",
+                            isPast && "opacity-50 cursor-not-allowed"
+                          )}
+                          onClick={() => !isPast && setSelectedTime(time)}
+                          disabled={!date || isPast}
+                        >
+                          <Clock className="h-4 w-4 mr-2" />
+                          {time}
+                        </Button>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Doctor Info */}
+              {/* Doctor Selection */}
               <Card className="border-border/50">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-xl">
                     <Brain className="h-5 w-5 text-primary" />
-                    Your Specialist
+                    Select Doctor
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-5 p-4 bg-muted/30 rounded-xl">
-                    <img
-                      src={doctorInfo.image}
-                      alt={doctorInfo.name}
-                      className="w-16 h-16 rounded-full object-cover border-4 border-primary/10"
-                    />
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground">{doctorInfo.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="font-normal">
-                          <Brain className="h-3 w-3 mr-1" />
-                          {doctorInfo.specialization}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        {doctorInfo.location}
-                      </div>
-                    </div>
+                  <div className="space-y-2">
+                    <label htmlFor="doctor-select" className="text-sm text-muted-foreground">
+                      Choose a doctor for your appointment
+                    </label>
+                    <select
+                      id="doctor-select"
+                      value={selectedDoctor?.id || ""}
+                      onChange={(e) => {
+                        const doctor = doctors.find(d => d.id === e.target.value);
+                        setSelectedDoctor(doctor || null);
+                      }}
+                      disabled={doctors.length === 0}
+                      className={cn(
+                        "w-full h-12 px-4 rounded-xl border border-border bg-background text-foreground",
+                        "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                        "transition-all cursor-pointer",
+                        "appearance-none bg-no-repeat bg-right",
+                        "text-base font-medium"
+                      )}
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                        backgroundPosition: 'right 12px center',
+                        backgroundSize: '20px',
+                        paddingRight: '44px'
+                      }}
+                    >
+                      <option value="" disabled>
+                        {doctors.length === 0 ? "Loading doctors..." : "Choose a doctor"}
+                      </option>
+                      {doctors.map((doctor) => (
+                        <option key={doctor.id} value={doctor.id}>
+                          {formatDoctorName(doctor.first_name, doctor.last_name)} — {doctor.specialization || "General Practice"}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </CardContent>
               </Card>
@@ -417,21 +626,23 @@ export default function BookAppointment() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Doctor</span>
-                      <span className="font-medium text-foreground">{doctorInfo.name}</span>
+                      <span className="font-medium text-foreground">
+                        {selectedDoctor ? formatDoctorName(selectedDoctor.first_name, selectedDoctor.last_name) : "—"}
+                      </span>
                     </div>
                   </div>
-                  
+
                   <Separator />
-                  
-                  <Button 
-                    className="w-full h-12" 
+
+                  <Button
+                    className="w-full h-12"
                     disabled={!isStep1Complete}
                     onClick={handleConfirmDateTime}
                   >
                     Confirm Date & Time
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
-                  
+
                   {!isStep1Complete && (
                     <p className="text-xs text-muted-foreground text-center">
                       Please select both date and time to continue
@@ -477,140 +688,211 @@ export default function BookAppointment() {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Doctor</span>
-                      <p className="font-medium text-foreground">{doctorInfo.name}</p>
+                      <p className="font-medium text-foreground">
+                        {selectedDoctor ? formatDoctorName(selectedDoctor.first_name, selectedDoctor.last_name) : "—"}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Voice Recording Section */}
-              <Card className="border-border/50">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <Mic className="h-5 w-5 text-primary" />
-                    Voice Recording
-                  </CardTitle>
-                  <CardDescription>
-                    Record your symptoms using your voice
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="bg-muted/30 rounded-xl p-6 space-y-5">
-                    {/* Waveform Visualization */}
-                    <div className="w-full h-16 flex items-center justify-center gap-1">
-                      {waveformData.map((height, index) => (
-                        <div
-                          key={index}
-                          className={cn(
-                            "w-1.5 rounded-full transition-all duration-75",
-                            isRecording && !isPaused
-                              ? 'bg-primary' 
-                              : audioBlob 
-                                ? 'bg-primary/60' 
-                                : 'bg-muted-foreground/20'
-                          )}
-                          style={{
-                            height: `${height * 60}px`,
-                            minHeight: '6px',
-                          }}
-                        />
-                      ))}
-                    </div>
+              {/* Voice Recording Section - Hidden after transcription is displayed */}
+              {!showTranscription && !isTranscribing && (
+                <Card className="border-border/50">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <Mic className="h-5 w-5 text-primary" />
+                      Voice Recording
+                    </CardTitle>
+                    <CardDescription>
+                      Record your symptoms using your voice
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="bg-muted/30 rounded-xl p-6 space-y-5">
+                      {/* Waveform Visualization */}
+                      <div className="w-full h-16 flex items-center justify-center gap-1">
+                        {waveformData.map((height, index) => (
+                          <div
+                            key={index}
+                            className={cn(
+                              "w-1.5 rounded-full transition-all duration-75",
+                              isRecording && !isPaused
+                                ? 'bg-primary'
+                                : audioBlob
+                                  ? 'bg-primary/60'
+                                  : 'bg-muted-foreground/20'
+                            )}
+                            style={{
+                              height: `${height * 60}px`,
+                              minHeight: '6px',
+                            }}
+                          />
+                        ))}
+                      </div>
 
-                    {/* Timer */}
-                    <div className="text-center">
-                      <span className="text-3xl font-mono font-semibold text-foreground">
-                        {formatTime(recordingTime)}
-                      </span>
-                      {isRecording && isPaused && (
-                        <span className="ml-2 text-sm text-muted-foreground">(Paused)</span>
-                      )}
-                    </div>
+                      {/* Timer */}
+                      <div className="text-center">
+                        <span className="text-3xl font-mono font-semibold text-foreground">
+                          {formatTime(recordingTime)}
+                        </span>
+                        {isRecording && isPaused && (
+                          <span className="ml-2 text-sm text-muted-foreground">(Paused)</span>
+                        )}
+                      </div>
 
-                    {/* Recording Controls */}
-                    <div className="flex justify-center gap-4">
-                      {!audioBlob ? (
-                        <>
-                          {!isRecording ? (
-                            <Button
-                              size="lg"
-                              className="w-20 h-20 rounded-full hover:scale-105 shadow-lg shadow-primary/20"
-                              onClick={startRecording}
-                            >
-                              <Mic className="h-8 w-8" />
-                            </Button>
-                          ) : (
-                            <>
-                              {isPaused ? (
-                                <Button
-                                  size="lg"
-                                  variant="outline"
-                                  className="w-14 h-14 rounded-full"
-                                  onClick={resumeRecording}
-                                >
-                                  <Play className="h-5 w-5 ml-0.5" />
-                                </Button>
-                              ) : (
-                                <Button
-                                  size="lg"
-                                  variant="outline"
-                                  className="w-14 h-14 rounded-full"
-                                  onClick={pauseRecording}
-                                >
-                                  <Pause className="h-5 w-5" />
-                                </Button>
-                              )}
+                      {/* Recording Controls */}
+                      <div className="flex justify-center gap-4">
+                        {!audioBlob ? (
+                          <>
+                            {!isRecording ? (
                               <Button
                                 size="lg"
-                                variant="destructive"
-                                className="w-14 h-14 rounded-full"
-                                onClick={stopRecording}
+                                className="w-20 h-20 rounded-full hover:scale-105 shadow-lg shadow-primary/20"
+                                onClick={startRecording}
                               >
-                                <Square className="h-5 w-5" />
+                                <Mic className="h-8 w-8" />
                               </Button>
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        <div className="flex items-center gap-4">
-                          <Button
-                            size="lg"
-                            variant="outline"
-                            className="w-14 h-14 rounded-full"
-                            onClick={togglePlayback}
-                          >
-                            {isPlaying ? (
-                              <Pause className="h-5 w-5" />
                             ) : (
-                              <Play className="h-5 w-5 ml-0.5" />
+                              <>
+                                {isPaused ? (
+                                  <Button
+                                    size="lg"
+                                    variant="outline"
+                                    className="w-14 h-14 rounded-full"
+                                    onClick={resumeRecording}
+                                  >
+                                    <Play className="h-5 w-5 ml-0.5" />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="lg"
+                                    variant="outline"
+                                    className="w-14 h-14 rounded-full"
+                                    onClick={pauseRecording}
+                                  >
+                                    <Pause className="h-5 w-5" />
+                                  </Button>
+                                )}
+                                <Button
+                                  size="lg"
+                                  variant="destructive"
+                                  className="w-14 h-14 rounded-full"
+                                  onClick={stopRecording}
+                                >
+                                  <Square className="h-5 w-5" />
+                                </Button>
+                              </>
                             )}
-                          </Button>
-                          <Button
-                            size="lg"
-                            variant="ghost"
-                            className="w-14 h-14 rounded-full"
-                            onClick={resetRecording}
-                          >
-                            <RefreshCw className="h-5 w-5" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-4">
+                            <Button
+                              size="lg"
+                              variant="outline"
+                              className="w-14 h-14 rounded-full"
+                              onClick={togglePlayback}
+                            >
+                              {isPlaying ? (
+                                <Pause className="h-5 w-5" />
+                              ) : (
+                                <Play className="h-5 w-5 ml-0.5" />
+                              )}
+                            </Button>
+                            <Button
+                              size="lg"
+                              variant="ghost"
+                              className="w-14 h-14 rounded-full"
+                              onClick={resetRecording}
+                            >
+                              <RefreshCw className="h-5 w-5" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Status Text */}
-                    <p className="text-center text-sm text-muted-foreground">
-                      {isRecording && !isPaused
-                        ? "Recording... Tap pause or stop" 
-                        : isRecording && isPaused
-                          ? "Paused. Tap play to resume or stop to finish."
-                          : audioBlob 
-                            ? "Recording complete. Play to review or re-record."
-                            : "Tap the microphone to start recording"
-                      }
+                      {/* Status Text */}
+                      <p className="text-center text-sm text-muted-foreground">
+                        {isRecording && !isPaused
+                          ? "Recording... Tap pause or stop"
+                          : isRecording && isPaused
+                            ? "Paused. Tap play to resume or stop to finish."
+                            : audioBlob
+                              ? "Recording complete. Play to review or re-record."
+                              : "Tap the microphone to start recording"
+                        }
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Transcription Loading State */}
+              {isTranscribing && (
+                <Card className="border-primary/30 bg-primary/5">
+                  <CardContent className="py-8">
+                    <div className="flex flex-col items-center gap-4">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <div className="text-center">
+                        <p className="font-medium text-foreground">Transcribing your recording...</p>
+                        <p className="text-sm text-muted-foreground">This may take a few seconds</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Transcription Error */}
+              {transcriptionError && (
+                <Card className="border-destructive/50 bg-destructive/5">
+                  <CardContent className="py-4">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="font-medium text-destructive">Transcription Failed</p>
+                        <p className="text-sm text-muted-foreground mt-1">{transcriptionError}</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-3"
+                          onClick={resetRecording}
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Try Recording Again
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Editable Transcription Section */}
+              {showTranscription && !isTranscribing && !transcriptionError && (
+                <Card className="border-primary/30 bg-primary/5">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <CheckCircle2 className="h-5 w-5 text-primary" />
+                      Transcribed Symptoms (Editable)
+                    </CardTitle>
+                    <CardDescription>
+                      Please review and correct the transcription if needed before submitting.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Textarea
+                      placeholder="Your transcribed symptoms will appear here..."
+                      value={transcriptionText}
+                      onChange={(e) => setTranscriptionText(e.target.value)}
+                      rows={6}
+                      className="resize-none bg-background"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      <strong>Important:</strong> This text will be used for AI triage and shared with your doctor.
+                      Make sure it accurately reflects your symptoms.
                     </p>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Text Input */}
               <Card className="border-border/50">
@@ -643,11 +925,11 @@ export default function BookAppointment() {
                     <Shield className="h-5 w-5 text-primary flex-shrink-0" />
                     <p>Your recording and notes are securely stored.</p>
                   </div>
-                  
-                  <Button 
-                    className="w-full h-12" 
+
+                  <Button
+                    className="w-full h-12"
                     onClick={handleSubmitSymptoms}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isTranscribing || (audioBlob && showTranscription && !transcriptionText.trim())}
                   >
                     {isSubmitting ? (
                       <>
@@ -661,10 +943,17 @@ export default function BookAppointment() {
                       </>
                     )}
                   </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full h-10" 
+
+                  {/* Validation message for empty transcription */}
+                  {audioBlob && showTranscription && !transcriptionText.trim() && (
+                    <p className="text-xs text-destructive text-center">
+                      Please ensure the transcription is not empty before submitting.
+                    </p>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    className="w-full h-10"
                     onClick={handleBack}
                     disabled={isSubmitting}
                   >

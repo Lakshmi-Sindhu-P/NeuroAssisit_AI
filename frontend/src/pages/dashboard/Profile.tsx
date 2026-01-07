@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { IndianPhoneInput } from "@/components/IndianPhoneInput";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatName } from "@/lib/formatName";
 
 export default function Profile() {
   const { toast } = useToast();
@@ -20,14 +21,23 @@ export default function Profile() {
   const { user, logout } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
 
-  // Personal Information - use auth user data with fallbacks
+  // Helper to get full name from user context with proper casing
+  const getFullName = () => {
+    if (!user) return "User";
+    const firstName = user.firstName || "";
+    const lastName = user.lastName || "";
+    const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+    return formatName(fullName);
+  };
+
+  // Personal Information - use auth user data
   const [personalInfo, setPersonalInfo] = useState({
-    fullName: user?.firstName ? `${user.firstName} Sharma` : "User",
-    email: user?.email || "user@email.com",
-    phone: "98765 43210",
-    dateOfBirth: "1992-03-15",
-    gender: "male",
-    address: "42, Koramangala 4th Block, Bengaluru, Karnataka 560034",
+    fullName: getFullName(),
+    email: user?.email || "",
+    phone: "",
+    dateOfBirth: "",
+    gender: "",
+    address: "",
   });
 
   // Medical History
@@ -41,10 +51,10 @@ export default function Profile() {
 
   // Emergency Contact
   const [emergencyContact, setEmergencyContact] = useState({
-    name: "Priya Sharma",
-    relationship: "Spouse",
-    phone: "98765 12345",
-    email: "priya.sharma@email.com",
+    name: "",
+    relationship: "",
+    phone: "",
+    email: "",
   });
 
   // Notification Settings

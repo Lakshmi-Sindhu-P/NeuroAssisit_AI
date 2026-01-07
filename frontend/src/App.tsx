@@ -20,6 +20,10 @@ import PatientCheckIn from "./pages/admin/PatientCheckIn";
 import ClinicianStatus from "./pages/admin/ClinicianStatus";
 import Reports from "./pages/admin/Reports";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+import DoctorLayout from "./components/doctor/DoctorLayout";
+import PatientDirectory from "./pages/doctor/PatientDirectory";
+import ConsultationHistoryPage from "./pages/doctor/ConsultationHistoryPage";
+import ActiveConsultationPage from "./pages/doctor/ActiveConsultationPage";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +38,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/login" element={<Login />} />
+
+            {/* Patient Dashboard Routes */}
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="appointments" element={<BookAppointment />} />
@@ -41,13 +47,23 @@ const App = () => (
               <Route path="consultations" element={<PastConsultations />} />
               <Route path="profile" element={<Profile />} />
             </Route>
+
+            {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="check-in" element={<PatientCheckIn />} />
               <Route path="clinicians" element={<ClinicianStatus />} />
               <Route path="reports" element={<Reports />} />
             </Route>
-            <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+
+            {/* Doctor Routes (New Architecture) */}
+            <Route path="/doctor" element={<DoctorLayout />}>
+              <Route path="dashboard" element={<DoctorDashboard />} />
+              <Route path="patients" element={<PatientDirectory />} />
+              <Route path="history" element={<ConsultationHistoryPage />} />
+              <Route path="consultation/:id" element={<ActiveConsultationPage />} />
+            </Route>
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

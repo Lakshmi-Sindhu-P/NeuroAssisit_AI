@@ -17,18 +17,23 @@ interface QueueItem {
     urgency_score: number;
     triage_category: string;
     wait_time_minutes: number;
+    reason?: string;
     safety_warnings: any[];
 }
 
-export function QueueList({ onSelect, selectedId, onQueueUpdate }: { onSelect: (id: string, name: string) => void, selectedId: string | null, onQueueUpdate?: (count: number) => void }) {
+export function QueueList({ onSelect, selectedId, onQueueUpdate }: { onSelect: (id: string, name: string) => void, selectedId: string | null, onQueueUpdate?: (count: number, avgWait: number) => void }) {
     const [queue, setQueue] = useState<QueueItem[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchQueue = async () => {
         try {
             const res = await api.get("/dashboard/queue");
+            const count = res.data.length;
+            const totalWait = res.data.reduce((acc: number, item: any) => acc + (item.wait_time_minutes || 0), 0);
+            const avgWait = count > 0 ? Math.round(totalWait / count) : 0;
+
             setQueue(res.data);
-            if (onQueueUpdate) onQueueUpdate(res.data.length);
+            if (onQueueUpdate) onQueueUpdate(count, avgWait);
         } catch (err) {
             console.error("Failed to load queue", err);
         } finally {
@@ -62,7 +67,6 @@ export function QueueList({ onSelect, selectedId, onQueueUpdate }: { onSelect: (
             <CardHeader className="pb-3 border-b">
                 <CardTitle className="flex justify-between items-center text-lg">
                     <span>Patient Queue</span>
-                    <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">{queue.length} Waiting</Badge>
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 overflow-y-auto flex-1 min-h-0 p-3 bg-muted/5">
@@ -77,11 +81,18 @@ export function QueueList({ onSelect, selectedId, onQueueUpdate }: { onSelect: (
                         >
                             <div>
                                 <h3 className="font-semibold">{item.patient_name}</h3>
-                                <div className="flex gap-2 text-xs mt-1">
-                                    <Badge variant="secondary" className={getUrgencyColor(item.urgency_score) + " text-white border-0"}>
-                                        Score: {item.urgency_score}
-                                    </Badge>
-                                    <span className="text-muted-foreground">Wait: {item.wait_time_minutes}m</span>
+                                <div className="flex flex-col gap-1 mt-1">
+                                    <div className="flex gap-2 text-xs">
+                                        <Badge variant="secondary" className={getUrgencyColor(item.urgency_score) + " text-white border-0"}>
+                                            Score: {item.urgency_score}
+                                        </Badge>
+                                        <span className="text-muted-foreground pt-0.5">Wait: {item.wait_time_minutes}m</span>
+                                    </div>
+                                    {item.reason && item.reason.includes("DEMO") && (
+                                        <p className="text-[10px] text-blue-600 font-medium truncate max-w-[200px]">
+                                            {item.reason.split("]")[0] + "]"}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             <div className="text-right flex flex-col items-end gap-2">

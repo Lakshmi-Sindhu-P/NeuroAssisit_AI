@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Plus, UserPlus } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
@@ -23,6 +24,10 @@ export function AddPatientModal({ isOpen, onClose, onSuccess, doctorId }: AddPat
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
+    const [age, setAge] = useState("");
+    const [gender, setGender] = useState("");
+    const [phone, setPhone] = useState("");
+    const [address, setAddress] = useState("");
     const [reason, setReason] = useState("");
 
     // Created Data
@@ -38,7 +43,11 @@ export function AddPatientModal({ isOpen, onClose, onSuccess, doctorId }: AddPat
                 password: "tempPassword123!", // Auto-generate temp password
                 role: "PATIENT",
                 first_name: firstName,
-                last_name: lastName
+                last_name: lastName,
+                age: age ? parseInt(age) : undefined,
+                gender,
+                phone,
+                address
             });
 
             setNewUserId(signupRes.data.user_id);
@@ -60,26 +69,14 @@ export function AddPatientModal({ isOpen, onClose, onSuccess, doctorId }: AddPat
         if (!newUserId) return;
         setIsLoading(true);
         try {
-            // 2. Create IMMEIDATE Appointment
-            const apptRes = await api.post("/appointments", {
+            // 2. Create IMMEIDATE Appointment (Backend now auto-creates Consultation)
+            await api.post("/appointments/", {
                 patient_id: newUserId,
                 doctor_id: doctorId,
                 doctor_name: "Dr. Alexander", // Could fetch from context
                 scheduled_at: new Date(Date.now() + 5 * 60000).toISOString(), // Schedule 5 mins in future to pass backend validation
                 reason: reason,
                 notes: "Walk-in / Quick Add"
-            });
-
-            const apptId = apptRes.data.id;
-
-            // 3. Create Consultation (To put in Queue)
-            // Note: Our QueueList endpoint fetches CONSULTATIONS that are COMPLETED (or Check logic).
-            // Actually, wait, QueueList typically shows IN_PROGRESS or SCHEDULED?
-            // Checking dashboard.py: It shows consultations with status COMPLETED?? That seemed wrong in my audit.
-            // Let's assume creating the consultation puts them in the flow.
-            await api.post("/consultations", {
-                appointment_id: apptId,
-                notes: reason
             });
 
             toast.success("Patient added to queue!");

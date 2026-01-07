@@ -76,50 +76,35 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 210 35% 10%;
-    --foreground: 210 20% 95%;
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
 
-    --card: 210 30% 14%;
-    --card-foreground: 210 20% 95%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 210 30% 14%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 200 80% 55%;
-    --primary-foreground: 210 35% 10%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47.4% 11.2%;
 
-    --secondary: 210 25% 22%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 210 20% 25%;
-    --muted-foreground: 210 15% 65%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 200 40% 20%;
-    --accent-foreground: 200 80% 70%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 70% 55%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 210 25% 22%;
-    --input: 210 25% 22%;
-    --ring: 200 80% 55%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
 
-    --sidebar-background: 210 30% 12%;
-    --sidebar-foreground: 210 20% 95%;
-    --sidebar-primary: 200 80% 55%;
-    --sidebar-primary-foreground: 210 35% 10%;
-    --sidebar-accent: 200 40% 20%;
-    --sidebar-accent-foreground: 200 80% 70%;
-    --sidebar-border: 210 25% 22%;
-    --sidebar-ring: 200 80% 55%;
-
-    --chart-1: 200 75% 60%;
-    --chart-2: 180 55% 55%;
-    --chart-3: 220 65% 65%;
-    --chart-4: 160 45% 55%;
-    --chart-5: 210 15% 55%;
-
-    --sidebar: 210 30% 14%;
+    --sidebar-background: 222 47% 11%;
   }
 }
 
@@ -129,6 +114,78 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    /* Apple/Siri Inspired Aurora Background */
+    background-color: #f5f5f7;
+    /* Apple's light gray base */
+    background-image:
+      radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 0) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 0) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 0) 0, transparent 50%);
+    background-image:
+      conic-gradient(from 0deg at 50% 50%, #E2E8F0 0deg, #F8FAFC 180deg, #E2E8F0 360deg),
+      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0));
+
+    /* Using a more vibrant mesh for that "Siri" feel */
+    background:
+      radial-gradient(circle at 15% 50%, rgba(100, 150, 255, 0.1), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(200, 100, 255, 0.1), transparent 25%),
+      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8) 0%, #FAFAFA 100%);
+    background-attachment: fixed;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    /* Optimize typography rendering */
+  }
+
+  /* Dark mode override for background */
+  .dark body {
+    background:
+      radial-gradient(circle at 15% 50%, rgba(50, 80, 150, 0.2), transparent 40%),
+      radial-gradient(circle at 85% 30%, rgba(100, 50, 150, 0.2), transparent 40%),
+      radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+  }
+}
+
+@layer utilities {
+
+  /* Ultra-Premium Glassmorphism */
+  .glass {
+    @apply bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg;
+  }
+
+  .glass-heavy {
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-3xl border border-white/40 dark:border-white/20 shadow-xl;
+  }
+
+  .glass-card {
+    @apply bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-sm transition-all duration-500 hover:shadow-xl hover:bg-white/60 hover:-translate-y-1 rounded-2xl;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400;
+  }
+
+  /* Smooth Scroll Behavior */
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+
+  /* Waveform Animation */
+  .waveform-bar {
+    @apply w-1.5 bg-primary/80 rounded-full mx-0.5;
+    animation: waveform 1s ease-in-out infinite;
+  }
+
+  @keyframes waveform {
+
+    0%,
+    100% {
+      height: 20%;
+      opacity: 0.5;
+    }
+
+    50% {
+      height: 100%;
+      opacity: 1;
+    }
   }
 }

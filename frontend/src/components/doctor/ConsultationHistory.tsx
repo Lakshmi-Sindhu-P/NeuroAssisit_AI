@@ -73,6 +73,20 @@ export function ConsultationHistory() {
                                                         <span className="font-medium">{c.diagnosis}</span>
                                                     </div>
                                                 )}
+
+                                                {/* Audio Player in List */}
+                                                {c.audio_files && c.audio_files.length > 0 && (
+                                                    <div className="mt-3 w-full bg-muted/30 p-2 rounded-md" onClick={(e) => e.stopPropagation()}>
+                                                        <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                                                            <Clock className="w-3 h-3" /> Finalized Audio
+                                                        </p>
+                                                        <audio
+                                                            controls
+                                                            className="w-full h-8"
+                                                            src={`http://localhost:8000/${c.audio_files[0].file_url}`}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
                                                 <Badge variant="secondary" className={getStatusColor(c.status)}>
@@ -102,6 +116,29 @@ export function ConsultationHistory() {
 
                     {selectedConsultation && (
                         <div className="space-y-6">
+                            {/* Audio & Transcript Section */}
+                            {selectedConsultation.audio_files && selectedConsultation.audio_files.length > 0 && (
+                                <div className="bg-slate-50 p-4 rounded-lg border">
+                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                        <Clock className="w-4 h-4" /> Finalized Recording & Transcript
+                                    </h4>
+                                    <audio
+                                        controls
+                                        className="w-full h-10 mb-4"
+                                        src={`http://localhost:8000/${selectedConsultation.audio_files[0].file_url}`}
+                                    />
+
+                                    <h5 className="text-xs font-bold text-muted-foreground uppercase mb-1">Transcript Summary</h5>
+                                    <div className="max-h-40 overflow-y-auto text-sm text-muted-foreground bg-white p-3 rounded border">
+                                        {selectedConsultation.audio_files[0].transcription ? (
+                                            <p className="whitespace-pre-wrap">{selectedConsultation.audio_files[0].transcription}</p>
+                                        ) : (
+                                            <span className="italic">No transcription available.</span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Clinical Summary */}
                             <div className="grid grid-cols-2 gap-4 p-4 bg-muted/20 rounded-lg">
                                 <div>

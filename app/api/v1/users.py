@@ -136,3 +136,45 @@ def get_patient_profile(
         
     return profile
 
+@router.get("/patients", response_model=List[dict])
+def list_my_patients(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(RoleChecker([UserRole.DOCTOR]))
+):
+    """
+    Returns list of patients appearing in the doctor's consultation history.
+    """
+    from app.models.base import Consultation
+    
+    # query distinct patients involved in consultations with this doctor
+    # We want profile details.
+    
+    query = (
+        select(PatientProfile)
+        .join(Consultation, Consultation.patient_id == PatientProfile.user_id)
+        .where(Consultation.doctor_id == current_user.id)
+        .distinct()
+    )
+    
+    profiles = session.exec(query).all()
+    
+    results = []
+    for p in profiles:
+        # Get latest consultation date
+        last_visit = session.exec(
+            select(Consultation.created_at)
+            .where(Consultation.patient_id == p.user_id)
+            .where(Consultation.doctor_id == current_user.id)
+            .order_by(Consultation.created_at.desc())
+        ).first()
+        
+        results.append({
+            "id": str(p.user_id), # Return User ID as the identifier
+            "first_name": p.first_name,
+            "last_name": p.last_name,
+            "gender": p.gender,
+            "date_of_birth": p.date_of_birth,
+            "last_visit": last_visit
+        })
+        
+    return results

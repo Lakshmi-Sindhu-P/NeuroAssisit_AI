@@ -161,10 +161,10 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
     }
 
     return (
-        <div key={consultationId} className="h-full flex flex-row gap-4 animate-in fade-in duration-300 slide-in-from-right-4">
-            <div className="flex-1 flex flex-col gap-4 min-w-0">
+        <div key={consultationId} className="h-full flex flex-row gap-8 animate-in fade-in duration-300 slide-in-from-right-4">
+            <div className="flex-1 flex flex-col gap-6 min-w-0">
                 {/* Top Section: Audio & Safety */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                     <Card className="bg-primary/5 border-primary/20">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-lg flex justify-between items-center">
@@ -203,7 +203,7 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
                 </div>
 
                 {/* Main Workspace */}
-                <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
+                <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
                     <Card className="flex flex-col overflow-hidden">
                         <CardHeader className="py-3 bg-muted/5 border-b"><CardTitle>AI Analysis (SOAP)</CardTitle></CardHeader>
                         <CardContent className="flex-1 overflow-y-auto p-0">
