@@ -196,12 +196,11 @@ class AudioFile(SQLModel, table=True):
     uploaded_by: AudioUploaderType = Field(
         sa_column=Column(SAEnum(AudioUploaderType, native_enum=False))
     )
-    file_type: AudioFileType = Field(default=AudioFileType.PRE_VISIT)
+    mime_type: AudioFileType = Field(default=AudioFileType.PRE_VISIT)
     file_name: str
     file_url: str
     file_size: Optional[int] = None
     duration: Optional[float] = None
-    mime_type: Optional[str] = None
     transcription: Optional[str] = None # Text field
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
 

@@ -97,6 +97,43 @@ def get_my_appointments(
         statement = select(Appointment)
     return session.exec(statement).all()
 
+@router.get("/{id}")
+def get_appointment_by_id(
+    id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get a single appointment by ID.
+    Patients can only view their own appointments.
+    Doctors can view appointments assigned to them.
+    """
+    appointment = session.get(Appointment, id)
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Authorization check
+    if current_user.role == UserRole.PATIENT:
+        if appointment.patient_id != current_user.id:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+    elif current_user.role == UserRole.DOCTOR:
+        if appointment.doctor_id != current_user.id:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Return appointment with additional details
+    return {
+        "id": str(appointment.id),
+        "doctor_id": str(appointment.doctor_id) if appointment.doctor_id else None,
+        "doctor_name": appointment.doctor_name,
+        "doctor_specialization": None,  # Can be enhanced with profile lookup
+        "patient_id": str(appointment.patient_id),
+        "scheduled_at": appointment.scheduled_at.isoformat(),
+        "status": appointment.status.value if hasattr(appointment.status, 'value') else str(appointment.status),
+        "reason": appointment.reason,
+        "created_at": appointment.created_at.isoformat() if appointment.created_at else None,
+        "updated_at": appointment.updated_at.isoformat() if appointment.updated_at else None
+    }
+
 @router.patch("/{id}/status")
 def update_status(
     id: UUID,

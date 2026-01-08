@@ -31,14 +31,14 @@ export function SafetyAlerts({ warnings }: SafetyAlertsProps) {
                     <AlertTitle className={w.type === "CONTRAINDICATION" ? "text-red-800" : "text-yellow-800"}>
                         {w.type === "CONTRAINDICATION" ? "Safety Alert (Critical)" : "Clinical Caution"}
                     </AlertTitle>
-                    <AlertDescription className={w.type === "CONTRAINDICATION" ? "text-red-700" : "text-yellow-700"}>
+                    <AlertDescription className={w.type === "CONTRAINDICATION" ? "text-red-700 font-medium" : "text-yellow-700 font-medium"}>
                         {w.message}
                         {w.drug && (
                             <a
                                 href={`https://www.drugs.com/search.php?searchterm=${w.drug}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="block mt-1 font-semibold underline text-xs hover:text-opacity-80"
+                                className="block mt-1 font-bold underline text-xs hover:text-opacity-80"
                             >
                                 Verify {w.drug} on Drugs.com &rarr;
                             </a>

@@ -248,7 +248,7 @@ export default function BookAppointment() {
 
       const token = localStorage.getItem('neuroassist_token');
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/consultations/stt/transcribe-audio`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/transcription/speech-to-text`,
         {
           method: 'POST',
           headers: {
@@ -259,12 +259,11 @@ export default function BookAppointment() {
       );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Transcription failed');
+        throw new Error("Unable to transcribe audio. Please try again or continue with text.");
       }
 
       const data = await response.json();
-      setTranscriptionText(data.transcription || "");
+      setTranscriptionText(data.transcript || data.text || "");
       setShowTranscription(true);
       console.log("Transcription completed:", data.transcription?.substring(0, 100));
     } catch (error: any) {
@@ -356,48 +355,27 @@ export default function BookAppointment() {
       const createdConsultationId = res.consultation_id;
       let triageResult = null;
 
-      // If audio was recorded and transcription exists, submit the edited transcript
-      if (audioBlob && showTranscription && transcriptionText.trim() && createdConsultationId) {
+      // If audio was recorded, upload it for the created consultation
+      if (audioBlob && createdConsultationId) {
         try {
-          // First, upload the audio file to create the AudioFile record
           const formData = new FormData();
           formData.append('file', audioBlob, 'symptom_recording.webm');
+          formData.append('source', 'PRE_VISIT');
 
           const token = localStorage.getItem('neuroassist_token');
 
-          // Upload and transcribe (we already have transcription, but need to save audio)
+          // Upload audio to associate with consultation
           await fetch(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/consultations/${createdConsultationId}/transcribe`,
+            `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/consultations/${createdConsultationId}/upload`,
             {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${token}` },
               body: formData
             }
           );
-
-          // Then submit the patient-edited transcript as final
-          const submitResponse = await fetch(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/consultations/${createdConsultationId}/submit-symptoms`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                final_transcript: transcriptionText.trim(),
-                additional_notes: additionalNotes || null
-              })
-            }
-          );
-
-          if (submitResponse.ok) {
-            triageResult = await submitResponse.json();
-            console.log("Symptoms submitted with triage:", triageResult);
-          }
+          console.log("Audio uploaded successfully for consultation:", createdConsultationId);
         } catch (symptomError) {
-          console.error("Symptom submission error:", symptomError);
-          // Continue with booking even if symptom submission fails
+          console.error("Audio upload error (non-blocking):", symptomError);
         }
       }
 

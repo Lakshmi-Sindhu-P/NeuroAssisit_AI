@@ -1,110 +1,81 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 210 50% 98%;
-    --foreground: 210 40% 15%;
+    /* Refined Medical SaaS Palette - Calm, Trustworthy Blue-Teal */
+    --background: 210 50% 98.5%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 40% 15%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 40% 15%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 200 85% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 205 85% 50%;
+    --primary-foreground: 100 0% 100%;
 
-    --secondary: 200 30% 94%;
-    --secondary-foreground: 200 40% 30%;
+    --secondary: 190 40% 96%;
+    --secondary-foreground: 205 80% 30%;
 
-    --muted: 210 25% 92%;
-    --muted-foreground: 210 20% 45%;
+    --muted: 210 25% 94%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 180 50% 95%;
-    --accent-foreground: 200 85% 40%;
+    --accent: 185 80% 97%;
+    --accent-foreground: 205 85% 45%;
 
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 100 0% 100%;
 
-    --border: 210 30% 88%;
-    --input: 210 30% 88%;
-    --ring: 200 85% 45%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 205 85% 50%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 210 40% 15%;
-    --sidebar-primary: 200 85% 45%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 205 85% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 200 30% 94%;
-    --sidebar-accent-foreground: 200 40% 30%;
-    --sidebar-border: 210 30% 88%;
-    --sidebar-ring: 200 85% 45%;
+    --sidebar-accent: 205 30% 96%;
+    --sidebar-accent-foreground: 205 80% 30%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 205 85% 50%;
 
-    --chart-1: 200 85% 55%;
-    --chart-2: 180 60% 50%;
-    --chart-3: 220 70% 60%;
-    --chart-4: 160 50% 50%;
-    --chart-5: 210 20% 50%;
-
-    --sidebar: 0 0% 100%;
-
-    --font-sans: 'Montserrat', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-    --font-serif: 'Cormorant Garamond', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
-    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-
-    --shadow-2xs: 0 1px 2px 0px hsl(200 30% 20% / 0.03);
-    --shadow-xs: 0 1px 3px 0px hsl(200 30% 20% / 0.04);
-    --shadow-sm: 0 2px 4px -1px hsl(200 30% 20% / 0.06), 0 1px 2px -1px hsl(200 30% 20% / 0.04);
-    --shadow: 0 4px 6px -1px hsl(200 30% 20% / 0.08), 0 2px 4px -2px hsl(200 30% 20% / 0.04);
-    --shadow-md: 0 6px 10px -2px hsl(200 30% 20% / 0.1), 0 3px 5px -2px hsl(200 30% 20% / 0.05);
-    --shadow-lg: 0 10px 15px -3px hsl(200 30% 20% / 0.1), 0 4px 6px -4px hsl(200 30% 20% / 0.05);
-    --shadow-xl: 0 20px 25px -5px hsl(200 30% 20% / 0.1), 0 8px 10px -6px hsl(200 30% 20% / 0.05);
-    --shadow-2xl: 0 25px 50px -12px hsl(200 30% 20% / 0.25);
-
-    --tracking-normal: 0em;
-    --spacing: 0.25rem;
+    --font-sans: 'Montserrat', ui-sans-serif, system-ui;
   }
 
   .dark {
-    --background: 222 47% 11%;
+    --background: 222 47% 4%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 11%;
+    --card: 222 47% 6%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 11%;
+    --popover: 222 47% 6%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47.4% 11.2%;
+    --primary: 205 85% 60%;
+    --primary-foreground: 222 47% 4%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 217 33% 13%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 217 33% 13%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 217 33% 13%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-
-    --sidebar-background: 222 47% 11%;
+    --border: 217 33% 13%;
+    --input: 217 33% 13%;
+    --ring: 205 85% 60%;
   }
 }
 
@@ -112,80 +83,47 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground antialiased;
-    /* Apple/Siri Inspired Aurora Background */
-    background-color: #f5f5f7;
-    /* Apple's light gray base */
-    background-image:
-      radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 0) 0, transparent 50%),
-      radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 0) 0, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 0) 0, transparent 50%);
-    background-image:
-      conic-gradient(from 0deg at 50% 50%, #E2E8F0 0deg, #F8FAFC 180deg, #E2E8F0 360deg),
-      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0));
-
-    /* Using a more vibrant mesh for that "Siri" feel */
-    background:
-      radial-gradient(circle at 15% 50%, rgba(100, 150, 255, 0.1), transparent 25%),
-      radial-gradient(circle at 85% 30%, rgba(200, 100, 255, 0.1), transparent 25%),
-      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8) 0%, #FAFAFA 100%);
-    background-attachment: fixed;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    /* Optimize typography rendering */
-  }
-
-  /* Dark mode override for background */
-  .dark body {
-    background:
-      radial-gradient(circle at 15% 50%, rgba(50, 80, 150, 0.2), transparent 40%),
-      radial-gradient(circle at 85% 30%, rgba(100, 50, 150, 0.2), transparent 40%),
-      radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+    @apply bg-background text-foreground antialiased selection:bg-primary/20;
   }
 }
 
 @layer utilities {
-
-  /* Ultra-Premium Glassmorphism */
   .glass {
-    @apply bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg;
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-lg;
+  }
+  
+  .medical-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, hsl(var(--accent) / 0.3) 100%);
   }
 
-  .glass-heavy {
-    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-3xl border border-white/40 dark:border-white/20 shadow-xl;
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
   }
 
-  .glass-card {
-    @apply bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-sm transition-all duration-500 hover:shadow-xl hover:bg-white/60 hover:-translate-y-1 rounded-2xl;
+  .animate-pulse-medical {
+    animation: pulseMedical 2s infinite ease-in-out;
   }
 
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400;
-  }
-
-  /* Smooth Scroll Behavior */
-  .scroll-smooth {
-    scroll-behavior: smooth;
-  }
-
-  /* Waveform Animation */
-  .waveform-bar {
-    @apply w-1.5 bg-primary/80 rounded-full mx-0.5;
-    animation: waveform 1s ease-in-out infinite;
-  }
-
-  @keyframes waveform {
-
-    0%,
-    100% {
-      height: 20%;
-      opacity: 0.5;
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
     }
-
-    50% {
-      height: 100%;
+    to {
       opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulseMedical {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px 0 hsl(var(--primary) / 0.2);
     }
   }
 }

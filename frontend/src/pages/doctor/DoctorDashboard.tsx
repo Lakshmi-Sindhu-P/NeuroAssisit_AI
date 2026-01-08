@@ -1,80 +1,80 @@
 import { useState } from "react";
 import { QueueList } from "@/components/doctor/QueueList";
 import { FailureQueue } from "@/components/doctor/FailureQueue";
-import { useNavigate } from "react-router-dom";
+import { ActiveConsultation } from "@/components/doctor/ActiveConsultation";
+import { Button } from "@/components/ui/button";
 import { AddPatientModal } from "@/components/doctor/AddPatientModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserPlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { DashboardOverview } from "@/components/doctor/DashboardWidgets";
 
 export default function DoctorDashboard() {
+    // State for selected patient from Queue
+    const [selectedConsultation, setSelectedConsultation] = useState<string | null>(null);
+    const [patientName, setPatientName] = useState<string | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [queueCount, setQueueCount] = useState(0);
-    const [avgWaitTime, setAvgWaitTime] = useState(0);
-
-    const navigate = useNavigate();
     const { user } = useAuth();
 
-    // Stats calculations
-    const handleQueueUpdate = (count: number, avgWait: number) => {
-        setQueueCount(count);
-        setAvgWaitTime(avgWait);
+    // Handler when clicking a patient in QueueList
+    const handleSelectPatient = (id: string, name: string) => {
+        setSelectedConsultation(id);
+        setPatientName(name);
     };
 
-    // Navigate to the new Full Page Consultation
-    const handleSelectPatient = (id: string) => {
-        navigate(`/doctor/consultation/${id}`);
+    // Handler when consultation is finished
+    const handleConsultationComplete = () => {
+        setSelectedConsultation(null);
+        setPatientName(null);
+        // Ideally, trigger a refresh of QueueList here
     };
 
     return (
-        <div className="h-full flex flex-col gap-6">
-            {/* Page Header */}
-            <div className="flex justify-between items-center flex-shrink-0">
+        <div className="h-full flex flex-col overflow-hidden">
+            {/* Sub-header for dashboard specific actions */}
+            <div className="flex justify-between items-center mb-6 px-1">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Dashboard Overview</h1>
-                    <p className="text-muted-foreground">Welcome back, Dr. {user?.firstName}.</p>
+                    <h2 className="text-2xl font-bold text-foreground">Clinical Queue</h2>
+                    <p className="text-muted-foreground text-sm">Manage waiting patients and AI-assisted consultations.</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button onClick={() => setIsAddModalOpen(true)} className="shadow-sm">
-                        <UserPlus className="w-4 h-4 mr-2" /> Quick Add Patient
-                    </Button>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-12 gap-8 flex-1 min-h-0">
-                {/* LEFT COLUMN: Queue Management */}
-                <div className="col-span-12 lg:col-span-4 h-full flex flex-col gap-4 overflow-hidden">
-                    {/* 1. The Main Priority Queue */}
-                    <div className="flex-1 min-h-0 overflow-hidden rounded-xl border bg-card shadow-sm">
-                        <QueueList
-                            onSelect={handleSelectPatient}
-                            selectedId={null}
-                            onQueueUpdate={handleQueueUpdate}
-                        />
-                    </div>
-
-                    {/* 2. The Safety Valve */}
-                    <div className="flex-shrink-0 rounded-xl border bg-card shadow-sm overflow-hidden max-h-[200px]">
-                        <FailureQueue onSelect={handleSelectPatient} />
-                    </div>
-                </div>
-
-                {/* RIGHT COLUMN: Widgets & Analytics */}
-                <div className="col-span-12 lg:col-span-8 h-full overflow-y-auto">
-                    <DashboardOverview queueLength={queueCount} avgWaitTime={avgWaitTime} />
-                </div>
+                <Button onClick={() => setIsAddModalOpen(true)} className="bg-primary hover:bg-primary/90 shadow-md">
+                    <UserPlus className="w-4 h-4 mr-2" /> Add Patient
+                </Button>
             </div>
 
             <AddPatientModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onSuccess={() => {
-                    // QueueList polls, so it will update eventually. 
-                    // Could force refresh context if needed.
+                    // In real app, we might trigger a refetch in QueueList
+                    // For now, reload or wait for polling
                 }}
                 doctorId={user?.id || ""}
             />
+
+            {/* Main Layout Grid */}
+            <div className="flex-1 grid grid-cols-12 gap-6 min-h-0">
+
+                {/* LEFT COLUMN: Queue Management */}
+                <div className="col-span-12 lg:col-span-3 h-full overflow-hidden flex flex-col gap-4">
+                    {/* 1. The Main Priority Queue */}
+                    <div className="flex-[2] min-h-0">
+                        <QueueList onSelect={handleSelectPatient} selectedId={selectedConsultation} />
+                    </div>
+
+                    {/* 2. The Safety Valve (Manual Review) */}
+                    <div className="flex-1 min-h-0">
+                        <FailureQueue onSelect={handleSelectPatient} />
+                    </div>
+                </div>
+
+                {/* RIGHT COLUMN: Active Workspace */}
+                <div className="col-span-12 lg:col-span-9 h-full min-h-0">
+                    <ActiveConsultation
+                        consultationId={selectedConsultation}
+                        patientName={patientName}
+                        onComplete={handleConsultationComplete}
+                    />
+                </div>
+            </div>
         </div>
     );
 }

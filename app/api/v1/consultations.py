@@ -162,7 +162,7 @@ async def upload_audio(
     file: UploadFile = File(...),
     source: str = Form("PRE_VISIT"), # PRE_VISIT or CONSULTATION
     session: Session = Depends(get_session),
-    current_user: User = Depends(RoleChecker([UserRole.DOCTOR, UserRole.PATIENT]))
+    current_user: User = Depends(RoleChecker([UserRole.DOCTOR, UserRole.PATIENT, UserRole.FRONT_DESK]))
 ):
     try:
         print(f"Upload request for Consultation {id}, File: {file.filename}, Source: {source}")
@@ -170,6 +170,12 @@ async def upload_audio(
         if not consultation:
             print(f"Consultation {id} not found")
             raise HTTPException(status_code=404, detail="Consultation not found")
+            
+        # Enforce Front Desk Restriction: Upload ONLY ONCE
+        if current_user.role == UserRole.FRONT_DESK:
+            existing_audio = session.exec(select(AudioFile).where(AudioFile.consultation_id == id)).first()
+            if existing_audio:
+                raise HTTPException(status_code=403, detail="Front Desk can only upload audio once during check-in.")
             
         # Validation
         if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.aac', '.webm')): # Case insensitive check
@@ -243,15 +249,19 @@ async def upload_audio(
             file_type = AudioFileType.PRE_VISIT
 
         # Create AudioFile Record
-        uploader_type = AudioUploaderType.DOCTOR if current_user.role == UserRole.DOCTOR else AudioUploaderType.PATIENT
+        # CRITICAL: Map FRONT_DESK to DOCTOR uploader type to avoid DB Enum error
+        if current_user.role == UserRole.DOCTOR or current_user.role == UserRole.FRONT_DESK:
+            uploader_type = AudioUploaderType.DOCTOR
+        else:
+            uploader_type = AudioUploaderType.PATIENT
+
         audio_file = AudioFile(
             id=file_id,
             consultation_id=id,
             uploaded_by=uploader_type,
-            file_type=file_type,
+            mime_type=file_type, # Correctly mapping to DB column mime_type
             file_name=safe_filename, # Store the convenient name
-            file_url=file_path,
-            mime_type=file.content_type
+            file_url=file_path
         )
         session.add(audio_file)
         

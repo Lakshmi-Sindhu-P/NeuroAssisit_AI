@@ -1,16 +1,23 @@
-import axios from "axios";
-
 const API_BASE_URL = "http://localhost:8000/api/v1";
 
-// --- Fetch Wrapper for V3 Components ---
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const token = localStorage.getItem("neuroassist_token");
 
-    const headers = {
-        "Content-Type": "application/json",
+    // Don't set Content-Type for FormData - browser sets multipart boundary automatically
+    const isFormData = options.body instanceof FormData;
+
+    // Check if custom Content-Type was provided in options
+    const customContentType = (options.headers as Record<string, string>)?.["Content-Type"];
+
+    const headers: Record<string, string> = {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options.headers,
+        ...(options.headers as Record<string, string> || {}),
     };
+
+    // Only set Content-Type to JSON if not FormData AND no custom Content-Type provided
+    if (!isFormData && !customContentType) {
+        headers["Content-Type"] = "application/json";
+    }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
@@ -38,33 +45,31 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     return response.json();
 }
 
-// --- Axios Instance for Doctor Console (Legacy Support) ---
-const api = axios.create({
-    baseURL: "/api/v1", // Proxied to localhost:8000 via Vite
-});
-
-// Request Interceptor: Add Bearer Token
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem("neuroassist_token"); // Updated to use V3 key
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
+const api = {
+    get: async (url: string, options?: RequestInit) => {
+        const data = await apiRequest(url, { ...options, method: "GET" });
+        return { data };
     },
-    (error) => Promise.reject(error)
-);
-
-// Response Interceptor: Handle 401 (Logout)
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            console.warn("Unauthorized! Token may be expired.");
-            // Optional: localStorage.removeItem("neuroassist_token");
-        }
-        return Promise.reject(error);
-    }
-);
+    post: async (url: string, body?: any, options?: RequestInit) => {
+        const data = await apiRequest(url, {
+            ...options,
+            method: "POST",
+            body: body instanceof FormData ? body : JSON.stringify(body)
+        });
+        return { data };
+    },
+    patch: async (url: string, body?: any, options?: RequestInit) => {
+        const data = await apiRequest(url, {
+            ...options,
+            method: "PATCH",
+            body: body instanceof FormData ? body : JSON.stringify(body)
+        });
+        return { data };
+    },
+    delete: async (url: string, options?: RequestInit) => {
+        const data = await apiRequest(url, { ...options, method: "DELETE" });
+        return { data };
+    },
+};
 
 export default api;

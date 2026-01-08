@@ -1,9 +1,9 @@
-import { 
-  Users, 
-  UserCheck, 
-  Stethoscope, 
-  FileBarChart, 
-  LogOut 
+import {
+  Users,
+  UserCheck,
+  Stethoscope,
+  FileBarChart,
+  LogOut
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -23,8 +23,9 @@ import {
 const mainNavItems = [
   { title: "Live Triage Queue", url: "/admin/dashboard", icon: Users },
   { title: "Patient Check-in", url: "/admin/check-in", icon: UserCheck },
-  { title: "Clinician Status", url: "/admin/clinicians", icon: Stethoscope },
-  { title: "Reports", url: "/admin/reports", icon: FileBarChart },
+  // --- HIDDEN: Unfinished features (re-enable when implemented) ---
+  // { title: "Clinician Status", url: "/admin/clinicians", icon: Stethoscope },
+  // { title: "Reports", url: "/admin/reports", icon: FileBarChart },
 ];
 
 export function AdminSidebar() {
@@ -55,8 +56,8 @@ export function AdminSidebar() {
               {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink 
-                      to={item.url} 
+                    <NavLink
+                      to={item.url}
                       end={item.url === "/admin/dashboard"}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-accent"
                       activeClassName="bg-primary/10 text-primary font-medium"
@@ -76,8 +77,8 @@ export function AdminSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Logout">
-              <NavLink 
-                to="/login" 
+              <NavLink
+                to="/login"
                 className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
               >
                 <LogOut className="h-5 w-5 shrink-0" />

@@ -1,8 +1,12 @@
 from sqlmodel import create_engine, Session, SQLModel
 from app.core.config import settings
+import logging
 
-# engine = create_engine(settings.DATABASE_URL, echo=False)
-engine = create_engine("sqlite:///./neuroassist.db", connect_args={"check_same_thread": False}, echo=False)
+logger = logging.getLogger(__name__)
+
+# Use PostgreSQL from settings - NO SQLite fallback
+logger.info(f"Connecting to database: {settings.DATABASE_URL[:50]}...")
+engine = create_engine(settings.DATABASE_URL, echo=False)
 
 
 def init_db():

@@ -21,7 +21,7 @@ export function FailureQueue({ onSelect }: { onSelect: (id: string, name: string
         try {
             setError(false);
             const res = await api.get("/dashboard/queue/failed");
-            setItems(res.data);
+            setItems(res.data || []);
         } catch (err) {
             console.error(err);
             setError(true);
@@ -52,11 +52,11 @@ export function FailureQueue({ onSelect }: { onSelect: (id: string, name: string
     }
 
     return (
-        <Card className={`border ${hasFailures ? "border-destructive/50 bg-destructive/10" : "border-green-200 bg-green-50"}`}>
+        <Card className={`mt-4 border ${hasFailures ? "border-destructive/50 bg-destructive/10" : "border-green-200 bg-green-50"}`}>
             <CardHeader className="pb-2">
                 <CardTitle className={`text-sm flex items-center gap-2 ${hasFailures ? "text-destructive" : "text-green-700"}`}>
                     {hasFailures ? <AlertTriangle className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
-                    <span>{hasFailures ? `Manual Review Required (${items.length})` : "System Status: Online"}</span>
+                    <span>{hasFailures ? `Manual Review Required (${items.length})` : "System Status: Healthy"}</span>
                     <Button variant="ghost" size="icon" onClick={fetchFailed} className="h-6 w-6 ml-auto hover:bg-white/50">
                         <RefreshCw className={`w-3 h-3 ${!hasFailures && "text-green-700"}`} />
                     </Button>

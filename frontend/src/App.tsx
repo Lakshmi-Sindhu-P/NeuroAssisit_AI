@@ -10,6 +10,8 @@ import NotFound from "./pages/NotFound";
 import { DashboardLayout } from "./components/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import BookAppointment from "./pages/dashboard/BookAppointment";
+import MyAppointments from "./pages/dashboard/MyAppointments";
+import AppointmentDetails from "./pages/dashboard/AppointmentDetails";
 import AppointmentConfirmed from "./pages/dashboard/AppointmentConfirmed";
 import PastConsultations from "./pages/dashboard/PastConsultations";
 import Profile from "./pages/dashboard/Profile";
@@ -19,11 +21,20 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import PatientCheckIn from "./pages/admin/PatientCheckIn";
 import ClinicianStatus from "./pages/admin/ClinicianStatus";
 import Reports from "./pages/admin/Reports";
+
+// Master Admin Pages
+import MasterLayout from "./pages/master/MasterLayout";
+import MasterDashboard from "./pages/master/MasterDashboard";
+import DoctorsManagement from "./pages/master/DoctorsManagement";
+import FrontDeskManagement from "./pages/master/FrontDeskManagement";
+import PatientsView from "./pages/master/PatientsView";
+
+// Doctor Pages
+import { DoctorLayout } from "./components/doctor/DoctorLayout";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
-import DoctorLayout from "./components/doctor/DoctorLayout";
-import PatientDirectory from "./pages/doctor/PatientDirectory";
-import ConsultationHistoryPage from "./pages/doctor/ConsultationHistoryPage";
-import ActiveConsultationPage from "./pages/doctor/ActiveConsultationPage";
+
+// Route Protection
+import { ProtectedRoute, RequireAuth } from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -35,33 +46,57 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/login" element={<Login />} />
 
-            {/* Patient Dashboard Routes */}
-            <Route path="/dashboard" element={<DashboardLayout />}>
+            {/* Patient Dashboard - Protected for PATIENT role */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute allowedRoles={["patient"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
               <Route index element={<Dashboard />} />
-              <Route path="appointments" element={<BookAppointment />} />
+              <Route path="appointments" element={<MyAppointments />} />
+              <Route path="appointments/:appointmentId" element={<AppointmentDetails />} />
+              <Route path="book-appointment" element={<BookAppointment />} />
               <Route path="appointment-confirmed" element={<AppointmentConfirmed />} />
               <Route path="consultations" element={<PastConsultations />} />
               <Route path="profile" element={<Profile />} />
             </Route>
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminLayout />}>
+            {/* Front Desk Admin - Protected for FRONT_DESK and MASTER_ADMIN */}
+            <Route path="/admin" element={
+              <ProtectedRoute allowedRoles={["front-desk", "master-admin"]}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }>
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="check-in" element={<PatientCheckIn />} />
               <Route path="clinicians" element={<ClinicianStatus />} />
               <Route path="reports" element={<Reports />} />
             </Route>
 
-            {/* Doctor Routes (New Architecture) */}
-            <Route path="/doctor" element={<DoctorLayout />}>
+            {/* Master Admin Routes - Protected for MASTER_ADMIN only */}
+            <Route path="/admin/master" element={
+              <ProtectedRoute allowedRoles={["master-admin"]}>
+                <MasterLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<MasterDashboard />} />
+              <Route path="doctors" element={<DoctorsManagement />} />
+              <Route path="frontdesk" element={<FrontDeskManagement />} />
+              <Route path="patients" element={<PatientsView />} />
+            </Route>
+
+            {/* Doctor Console - Protected for DOCTOR and MASTER_ADMIN */}
+            <Route path="/doctor" element={
+              <ProtectedRoute allowedRoles={["doctor", "master-admin"]}>
+                <DoctorLayout />
+              </ProtectedRoute>
+            }>
               <Route path="dashboard" element={<DoctorDashboard />} />
-              <Route path="patients" element={<PatientDirectory />} />
-              <Route path="history" element={<ConsultationHistoryPage />} />
-              <Route path="consultation/:id" element={<ActiveConsultationPage />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
@@ -74,3 +109,4 @@ const App = () => (
 );
 
 export default App;
+

@@ -79,6 +79,7 @@ def signup(user_in: UserCreate, session: Session = Depends(get_session)):
 def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
     """
     Login endpoint - authenticates using email + password only.
+    Compatible with OAuth2 form data (username/password).
     Role is determined from database, not from frontend.
     Fails with 403 if user has no role assigned.
     Fails with 403 if doctor is INACTIVE.
@@ -86,7 +87,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = D
     import logging
     logger = logging.getLogger(__name__)
     
-    # 1. Find user by email
+    # 1. Find user by email (form_data.username contains the email)
     user = session.exec(select(User).where(User.email == form_data.username)).first()
     
     # 2. Validate credentials
