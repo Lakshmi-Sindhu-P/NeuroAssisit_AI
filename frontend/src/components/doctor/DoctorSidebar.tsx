@@ -23,8 +23,8 @@ import {
 
 const mainNavItems = [
     { title: "Dashboard", url: "/doctor/dashboard", icon: LayoutDashboard },
-    // { title: "Patient Search", url: "/doctor/patients", icon: Users },
-    // { title: "Clinical History", url: "/doctor/history", icon: History },
+    { title: "Patient Queue", url: "/doctor/queue", icon: Users },
+    { title: "Settings", url: "/doctor/settings", icon: Settings },
 ];
 
 export function DoctorSidebar() {

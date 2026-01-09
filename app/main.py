@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.api.v1 import auth, users, appointments, consultations, dashboard, admin, master_admin, patient, transcription, frontdesk
+from app.api.v1 import auth, users, appointments, consultations, dashboard, admin, master_admin, patient, transcription, frontdesk, medical_terms
 
 from app.core.db import init_db
 import logging
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # Define allowed origins
-ALLOWED_ORIGINS = ["http://localhost:8080", "http://localhost:8081"]
+ALLOWED_ORIGINS = ["http://localhost:8080", "http://localhost:8081", "http://localhost:5173"]
 
 # CORS middleware - allow frontend origins
 app.add_middleware(
@@ -60,6 +60,7 @@ app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
 app.include_router(master_admin.router, prefix="/api/v1/master", tags=["Master Admin"])
 app.include_router(transcription.router, prefix="/api/v1/transcription", tags=["Transcription"])
 app.include_router(frontdesk.router, prefix="/api/v1/frontdesk", tags=["Front Desk"])
+app.include_router(medical_terms.router, prefix="/api/v1/medical-terms", tags=["Medical Terms"])
 
 
 # Mount uploads directory to serve audio files

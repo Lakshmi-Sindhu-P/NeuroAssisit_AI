@@ -19,11 +19,45 @@ class GeminiService:
         wait=wait_exponential(multiplier=2, min=4, max=30),
         reraise=True
     )
+    async def generate_intake_summary(transcript_text: str) -> str:
+        """
+        Generates a concise (2-3 sentence) summary of the pre-visit intake transcription.
+        """
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        
+        prompt = f"""
+        You are an expert medical scribe assisting a Neurologist.
+        Summarize the following patient intake conversation (conducted by a nurse or front-desk) into 2-3 concise sentences.
+        Focus on:
+        1. Primary complaint/reason for visit.
+        2. Key duration or severity details mentioned.
+        3. Any urgent red flags identified.
+
+        Transcript:
+        {transcript_text}
+
+        Summary:
+        """
+        
+        # Offload the blocking API call to a thread
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None, 
+            lambda: model.generate_content(prompt)
+        )
+        return response.text.strip()
+
+    @staticmethod
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2, min=4, max=30),
+        reraise=True
+    )
     async def generate_clinical_document(document_type: str, soap_note: Dict[str, Any], patient_context: Dict[str, Any]) -> str:
         """
         Generates a clinical document (referral, certificate, etc.) based on the SOAP note.
         """
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         
         prompt = f"""
         You are an expert medical administrative assistant.
@@ -59,6 +93,25 @@ class GeminiService:
         Returns a dictionary matching the SOAP note schema.
         Includes robust retry logic for 429 Quota errors.
         """
+        if settings.USE_MOCK_AI:
+            print("   [MOCK] Returning simulation SOAP note...")
+            await asyncio.sleep(2)
+            return {
+                "soap_note": {
+                    "subjective": "Patient reports feeling better than yesterday. Confirmed hearing the doctor clearly.",
+                    "objective": "- Alert and oriented x3\n- Speech clear",
+                    "assessment": "Improving status post recent consultation.",
+                    "plan": "- Continue current care plan\n- Follow up as needed"
+                },
+                "ui_summary": {
+                    "diagnosis": "General Checkup",
+                    "prescription": "None",
+                    "notes": ""
+                },
+                "demographics": {},
+                "low_confidence": [],
+                "risk_flags": []
+            }
         # Construct a speaker-aware transcript if labels are provided
         formatted_transcript = transcript_text
         if speaker_labels:
@@ -80,9 +133,9 @@ class GeminiService:
                 f"Medical History/Notes: {patient_context.get('notes', 'None provided')}"
             )
             
-        # Initialize Model (Gemini 1.5 Flash - Verified & Requested)
+        # Initialize Model (Gemini 2.0 Flash)
         model = genai.GenerativeModel(
-            'gemini-1.5-flash',
+            'gemini-2.0-flash',
             generation_config={"response_mime_type": "application/json"}
         )
         
@@ -169,43 +222,80 @@ class GeminiService:
         wait=wait_exponential(multiplier=2, min=4, max=30),
         reraise=True
     )
-    async def generate_prescription_digitization(image_path: str) -> Dict[str, Any]:
+    async def transcribe_audio_with_diarization(audio_file_path: str) -> Dict[str, Any]:
         """
-        Analyzes a medical prescription image using Gemini Vision to extract structured medication data.
+        Transcribes audio using Gemini 2.0 Flash with advanced speaker diarization (Doctor vs Patient).
+        Output includes a plain text transcript and a structured list of utterances.
         """
         try:
-            # Load the image
-            # Gemini 1.5/2.5 Flash supports image inputs directly via path or bytes
-            # We'll use the file API for safety or direct upload object if needed, 
-            # but for simplicity/speed with local files, we can upload to File API or pass data.
-            # python-generativeai allows passing PIL images or path objects.
+            if settings.USE_MOCK_AI:
+                print("   [MOCK] Returning simulation transcript...")
+                await asyncio.sleep(2) # Simulate latency
+                return {
+                    "full_transcript": "Doctor: Check check. Is this recording?\nPatient: Yes, I can hear you.\nDoctor: Great. How are you feeling today?\nPatient: Better than yesterday.",
+                    "utterances": [
+                         {"speaker": "Doctor", "text": "Check check. Is this recording?", "start": 0.0, "end": 2.5},
+                         {"speaker": "Patient", "text": "Yes, I can hear you.", "start": 2.6, "end": 4.0},
+                         {"speaker": "Doctor", "text": "Great. How are you feeling today?", "start": 4.1, "end": 6.5},
+                         {"speaker": "Patient", "text": "Better than yesterday.", "start": 6.6, "end": 8.0}
+                    ]
+                }
             
-            # Note: For efficient handling, 'genai.upload_file' is recommended for larger media, 
-            # but for single page Rx, we can check library support. 
-            # Let's use the File API which is standard for recent Gemini versions.
+            print(f"   (Gemini) Uploading audio for transcription: {audio_file_path}")
+            # Upload the audio file to Gemini
+            uploaded_file = genai.upload_file(audio_file_path)
             
-            print(f"   (Gemini) Uploading file for vision analysis: {image_path}")
-            uploaded_file = genai.upload_file(image_path)
+            # Wait for processing to complete (usually instant for small files, but good practice)
+            import time
+            while uploaded_file.state.name == "PROCESSING":
+                print("   (Gemini) Waiting for file processing...")
+                time.sleep(1)
+                uploaded_file = genai.get_file(uploaded_file.name)
             
-            model = genai.GenerativeModel('gemini-2.0-flash-exp') # Or 1.5-flash if 2.5 not available yet via standard key in this env
+            if uploaded_file.state.name == "FAILED":
+                raise Exception("Audio file processing failed on Gemini server.")
 
-            prompt = "Analyze this prescription and extract medications in JSON."
+            model = genai.GenerativeModel(
+                'gemini-2.0-flash',
+                generation_config={"response_mime_type": "application/json"}
+            )
+            
+            prompt = """
+            You are an expert medical transcriptionist.
+            Transcribe the following audio consultation between a Doctor and a Patient.
+            
+            Your tasks:
+            1. **Identify Speakers**: Accurately label speakers as "Doctor", "Patient", or others (e.g., "Nurse", "Caregiver").
+            2. **Verbatim Transcription**: Transcribe the conversation word-for-word.
+            3. **Format**: Return a JSON object with the full transcript and list of utterances.
+            
+            Required JSON Structure:
+            {
+                "full_transcript": "Doctor: Hello... \\nPatient: Hi...",
+                "utterances": [
+                    {"speaker": "Doctor", "text": "Hello, how are you?", "start": 0.0, "end": 2.5},
+                    {"speaker": "Patient", "text": "I am not feeling well.", "start": 2.6, "end": 4.0}
+                ]
+            }
+            """
             
             # Offload blocking call
             loop = asyncio.get_event_loop()
+            print("   (Gemini) Sending transcription request...")
             response = await loop.run_in_executor(
                 None,
                 lambda: model.generate_content([prompt, uploaded_file])
             )
             
-            # Clean up file? (Optional but good practice if API allows, though usually auto-managed or small quota)
-            
+            # Parse result
             try:
+                result_json = json.loads(response.text)
+                return result_json
+            except json.JSONDecodeError:
+                # Cleanup attempt
                 text = response.text.replace("```json", "").replace("```", "").strip()
                 return json.loads(text)
-            except:
-                return {"raw_text": response.text, "error": "Failed to parse JSON"}
                 
         except Exception as e:
-            logger.error(f"Prescription OCR failed: {e}")
+            logger.error(f"Gemini Transcription failed: {e}")
             raise e

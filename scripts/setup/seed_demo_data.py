@@ -15,7 +15,7 @@ def seed_data():
     
     with Session(engine) as session:
         # 1. Get or Create Doctor
-        doctor_email = "dr.alexander@neuro.com"
+        doctor_email = "dr.smith@neuro.com"
         doctor = session.exec(select(User).where(User.email == doctor_email)).first()
         if not doctor:
             doctor = User(
@@ -29,7 +29,7 @@ def seed_data():
             
             doc_profile = DoctorProfile(
                 user_id=doctor.id, 
-                first_name="Alexander", last_name="Fleming",
+                first_name="John", last_name="Smith",
                 specialization="Neurology"
             )
             session.add(doc_profile)

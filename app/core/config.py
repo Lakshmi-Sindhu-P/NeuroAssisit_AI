@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     CORS_ORIGINS: List[str] = ["*"]
     PORT: int = 8000
+    USE_MOCK_AI: bool = False
 
     class Config:
         env_file = ".env"

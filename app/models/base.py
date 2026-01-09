@@ -196,7 +196,7 @@ class AudioFile(SQLModel, table=True):
     uploaded_by: AudioUploaderType = Field(
         sa_column=Column(SAEnum(AudioUploaderType, native_enum=False))
     )
-    mime_type: AudioFileType = Field(default=AudioFileType.PRE_VISIT)
+    file_type: AudioFileType = Field(default=AudioFileType.PRE_VISIT)
     file_name: str
     file_url: str
     file_size: Optional[int] = None
@@ -268,3 +268,18 @@ class MedicalDocument(SQLModel, table=True):
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
     
     consultation: Consultation = Relationship(back_populates="documents")
+
+class MedicalTermCategory(str, Enum):
+    DISEASE = "DISEASE"
+    MEDICATION = "MEDICATION"
+    SYMPTOM = "SYMPTOM"
+
+class MedicalTerm(SQLModel, table=True):
+    __tablename__ = "medical_terms"
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    term: str = Field(index=True, unique=True)
+    category: MedicalTermCategory = Field(sa_column=Column(SAEnum(MedicalTermCategory, native_enum=False), index=True))
+    description: Optional[str] = None
+    added_by_id: Optional[UUID] = Field(foreign_key="users.id", nullable=True) # Optional tracking
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

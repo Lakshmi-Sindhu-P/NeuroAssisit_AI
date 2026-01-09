@@ -32,6 +32,8 @@ import PatientsView from "./pages/master/PatientsView";
 // Doctor Pages
 import { DoctorLayout } from "./components/doctor/DoctorLayout";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+import PatientQueue from "./pages/doctor/PatientQueue";
+import DoctorSettings from "./pages/doctor/DoctorSettings";
 
 // Route Protection
 import { ProtectedRoute, RequireAuth } from "@/components/ProtectedRoute";
@@ -97,6 +99,8 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route path="dashboard" element={<DoctorDashboard />} />
+              <Route path="queue" element={<PatientQueue />} />
+              <Route path="settings" element={<DoctorSettings />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

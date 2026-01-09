@@ -42,8 +42,7 @@ class ConsultationRead(BaseModel):
     end_time: Optional[Any] = None
     patient_profile: Optional[Any] = None # Explicitly added
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 @router.post("/", response_model=Consultation)
 def create_consultation(
@@ -59,7 +58,7 @@ def create_consultation(
     # Check if consultation already exists for this appointment
     existing = session.exec(select(Consultation).where(Consultation.appointment_id == consultation_in.appointment_id)).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Consultation already exists for this appointment")
+        return existing
 
     # Create Consultation
     new_consultation = Consultation(
@@ -160,12 +159,12 @@ async def upload_audio(
     id: UUID,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    source: str = Form("PRE_VISIT"), # PRE_VISIT or CONSULTATION
+    source: Optional[str] = Form(None), # PRE_VISIT or CONSULTATION
     session: Session = Depends(get_session),
     current_user: User = Depends(RoleChecker([UserRole.DOCTOR, UserRole.PATIENT, UserRole.FRONT_DESK]))
 ):
     try:
-        print(f"Upload request for Consultation {id}, File: {file.filename}, Source: {source}")
+        print(f"DEBUG_UPLOAD: Request for Consultation {id}, File: {file.filename}, Source: {source}", flush=True)
         consultation = session.get(Consultation, id)
         if not consultation:
             print(f"Consultation {id} not found")
@@ -244,7 +243,10 @@ async def upload_audio(
             
         # Determine File Type
         try:
-            file_type = AudioFileType(source)
+            if not source:
+                 file_type = AudioFileType.PRE_VISIT
+            else:
+                 file_type = AudioFileType(source)
         except ValueError:
             file_type = AudioFileType.PRE_VISIT
 
@@ -259,7 +261,7 @@ async def upload_audio(
             id=file_id,
             consultation_id=id,
             uploaded_by=uploader_type,
-            mime_type=file_type, # Correctly mapping to DB column mime_type
+            file_type=file_type, # Correctly mapping to DB column file_type
             file_name=safe_filename, # Store the convenient name
             file_url=file_path
         )
@@ -281,6 +283,43 @@ async def upload_audio(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@router.post("/{id}/reprocess_audio")
+async def reprocess_audio(
+    id: UUID,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(RoleChecker([UserRole.DOCTOR, UserRole.MASTER_ADMIN]))
+):
+    """
+    Manually triggers transcription for an existing audio file.
+    Useful if transcription failed or was skipped.
+    """
+    consultation = session.get(Consultation, id)
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consultation not found")
+
+    # Find valid audio file
+    audio_file = session.exec(
+        select(AudioFile)
+        .where(AudioFile.consultation_id == id)
+        .where(AudioFile.file_type == AudioFileType.CONSULTATION)
+    ).first()
+
+    if not audio_file:
+         raise HTTPException(status_code=404, detail="No consultation audio found to process")
+
+    print(f"Reprocessing audio for consultation {id}, file {audio_file.file_name}")
+
+    # Update status to show something is happening
+    consultation.status = ConsultationStatus.IN_PROGRESS
+    session.add(consultation)
+    session.commit()
+
+    # Trigger Background Task
+    background_tasks.add_task(process_transcription_only, consultation.id, audio_file.id)
+
+    return {"message": "Reprocessing started", "audio_id": audio_file.id}
 
 @router.post("/{id}/generate_soap")
 async def generate_soap(
@@ -307,6 +346,50 @@ class ConsultationUpdate(BaseModel):
     notes: Optional[str] = None
     diagnosis: Optional[str] = None
     prescription: Optional[str] = None
+    transcript: Optional[str] = None
+
+@router.get("/{id}/intake_summary")
+async def get_intake_summary(
+    id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(RoleChecker([UserRole.DOCTOR, UserRole.MASTER_ADMIN]))
+):
+    """
+    Returns a clinical summary of any pre-visit (Front Desk/Patient) recordings.
+    """
+    consultation = session.get(Consultation, id)
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consultation not found")
+        
+    pre_visit_audio = session.exec(
+        select(AudioFile)
+        .where(AudioFile.consultation_id == id)
+        .where(AudioFile.file_type == AudioFileType.PRE_VISIT)
+    ).all()
+    
+    if not pre_visit_audio:
+        return {"summary": "No pre-visit data available.", "full_transcript": ""}
+        
+    transcripts = [a.transcription for a in pre_visit_audio if a.transcription]
+    full_transcript = "\n\n".join(transcripts)
+    
+    if not full_transcript:
+        return {"summary": "Pre-visit recording found but not yet transcribed.", "full_transcript": ""}
+        
+    # Generate Summary via Gemini
+    from app.services.llm_service import GeminiService
+    try:
+        summary = await GeminiService.generate_intake_summary(full_transcript)
+        return {
+            "summary": summary,
+            "full_transcript": full_transcript
+        }
+    except Exception as e:
+        print(f"Intake summary generation failed: {e}")
+        return {
+            "summary": "Clinical summary unavailable.",
+            "full_transcript": full_transcript
+        }
 
 @router.patch("/{id}", response_model=Consultation)
 def update_consultation(
@@ -330,6 +413,19 @@ def update_consultation(
         consultation.diagnosis = update_data.diagnosis
     if update_data.prescription is not None:
         consultation.prescription = update_data.prescription
+        
+    # Handle Transcript Update
+    if update_data.transcript is not None:
+        # Find the consultation audio file
+        audio_file = session.exec(
+            select(AudioFile)
+            .where(AudioFile.consultation_id == id)
+            .where(AudioFile.file_type == AudioFileType.CONSULTATION)
+        ).first()
+        
+        if audio_file:
+            audio_file.transcription = update_data.transcript
+            session.add(audio_file)
         
     session.add(consultation)
     session.commit()
