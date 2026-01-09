@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks, Form
+from datetime import datetime, timedelta
 from sqlmodel import Session, select
 from app.core.db import get_session
 from app.models.base import Consultation, ConsultationStatus, Appointment, User, UserRole, AudioFile, SOAPNote, AudioUploaderType, AudioFileType, PatientProfile, DoctorProfile
@@ -249,6 +250,46 @@ async def upload_audio(
                  file_type = AudioFileType(source)
         except ValueError:
             file_type = AudioFileType.PRE_VISIT
+
+        # --- AUDIO CONVERSION (WebM -> MP3) ---
+        # Gemini often rejects raw browser WebM. Convert to MP3 for compatibility.
+        original_path = file_path
+        
+        # Check if conversion is needed (convert everything not MP3/WAV just to be safe, or specifically WebM)
+        if file_ext.lower() not in ['.mp3', '.wav']:
+            try:
+                print(f"Converting {file.filename} to MP3...")
+                mp3_filename = os.path.splitext(safe_filename)[0] + ".mp3"
+                mp3_path = os.path.join(UPLOAD_DIR, mp3_filename)
+                
+                import subprocess
+                # ffmpeg -i input.webm -vn -acodec libmp3lame -q:a 2 output.mp3
+                # -vn: disable video, -y: overwrite
+                cmd = [
+                    "ffmpeg", "-y", 
+                    "-i", original_path, 
+                    "-vn", 
+                    "-acodec", "libmp3lame", 
+                    "-q:a", "2", 
+                    mp3_path
+                ]
+                
+                # Run conversion
+                result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                
+                if result.returncode == 0:
+                    print(f"Conversion successful: {mp3_filename}")
+                    # Update references to use the new MP3
+                    safe_filename = mp3_filename
+                    file_path = mp3_path
+                    # Optional: Remove original to save space? Keep for now for debugging.
+                else:
+                    print(f"FFmpeg conversion failed: {result.stderr.decode()}")
+                    # Fallback to original file if conversion fails
+                    
+            except Exception as e:
+                print(f"Conversion exception: {e}")
+                # Fallback to original file
 
         # Create AudioFile Record
         # CRITICAL: Map FRONT_DESK to DOCTOR uploader type to avoid DB Enum error

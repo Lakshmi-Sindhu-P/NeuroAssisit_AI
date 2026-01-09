@@ -24,7 +24,8 @@ import {
     Sparkles,
     Loader2,
     LayoutDashboard,
-    Mic
+    Mic,
+    RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +56,19 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
     // AI & Transcription State
     const [aiStatus, setAiStatus] = useState<"idle" | "processing" | "transcript_ready" | "soap_ready">("idle");
     const [transcriptionText, setTranscriptionText] = useState("");
+
+    // Warn on Refresh if unsaved changes
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            // Warn if we have a transcript that might be lost
+            if (transcriptionText && currentStep === 2) {
+                e.preventDefault();
+                e.returnValue = ''; // Trigger browser confirmation
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [transcriptionText, currentStep]);
 
     // Poll for AI updates
     useEffect(() => {
@@ -393,6 +407,9 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
                                         <div className="flex justify-between items-center bg-muted/30 p-4 rounded-xl shrink-0">
                                             <p className="text-xs text-muted-foreground">Edits can be saved as draft.</p>
                                             <div className="flex gap-2">
+                                                <Button size="sm" variant="ghost" onClick={handleReprocessAudio} title="Regenerate Transcript (Retries AI)">
+                                                    <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                                                </Button>
                                                 <Button size="sm" variant="outline" onClick={() => handleSaveClinicalData()}>
                                                     <Save className="h-4 w-4 mr-2" /> Save Draft
                                                 </Button>
@@ -409,95 +426,97 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
                 )}
 
                 {/* Step 3: Clinical Plan */}
-                {currentStep === 3 && (
-                    <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-right-4 duration-300">
-                        {/* Left: AI & Transcript Reference */}
-                        <div className="flex flex-col gap-4 h-full min-h-0">
-                            <Card className="flex flex-col border-none shadow-md h-full bg-slate-50/80">
-                                <CardHeader className="py-3 border-b">
-                                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                                        <BrainCircuit className="h-4 w-4 text-primary" /> AI SOAP Note
+                {
+                    currentStep === 3 && (
+                        <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-right-4 duration-300">
+                            {/* Left: AI & Transcript Reference */}
+                            <div className="flex flex-col gap-4 h-full min-h-0">
+                                <Card className="flex flex-col border-none shadow-md h-full bg-slate-50/80">
+                                    <CardHeader className="py-3 border-b">
+                                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                            <BrainCircuit className="h-4 w-4 text-primary" /> AI SOAP Note
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex-1 overflow-y-auto p-4 text-sm">
+                                        {consultation?.soap_note?.soap_json ? (
+                                            <div className="space-y-4">
+                                                <div className="p-3 bg-white rounded-lg shadow-sm border">
+                                                    <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Subjective</h5>
+                                                    <p>{consultation.soap_note.soap_json.soap_note.subjective}</p>
+                                                </div>
+                                                <div className="p-3 bg-white rounded-lg shadow-sm border">
+                                                    <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Objective</h5>
+                                                    <p>{consultation.soap_note.soap_json.soap_note.objective}</p>
+                                                </div>
+                                                <div className="p-3 bg-white rounded-lg shadow-sm border">
+                                                    <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Assessment</h5>
+                                                    <p>{consultation.soap_note.soap_json.soap_note.assessment}</p>
+                                                </div>
+                                                <div className="p-3 bg-white rounded-lg shadow-sm border">
+                                                    <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Plan</h5>
+                                                    <p>{consultation.soap_note.soap_json.soap_note.plan}</p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
+                                                <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                                                <p>Generating SOAP...</p>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                                <SafetyAlerts warnings={safetyWarnings} />
+                            </div>
+
+                            {/* Right: Final Documentation */}
+                            <Card className="flex flex-col border-none shadow-md h-full">
+                                <CardHeader className="py-3 border-b bg-green-50/30">
+                                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-green-800">
+                                        <FileText className="h-4 w-4" /> Final Documentation
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent className="flex-1 overflow-y-auto p-4 text-sm">
-                                    {consultation?.soap_note?.soap_json ? (
-                                        <div className="space-y-4">
-                                            <div className="p-3 bg-white rounded-lg shadow-sm border">
-                                                <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Subjective</h5>
-                                                <p>{consultation.soap_note.soap_json.soap_note.subjective}</p>
-                                            </div>
-                                            <div className="p-3 bg-white rounded-lg shadow-sm border">
-                                                <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Objective</h5>
-                                                <p>{consultation.soap_note.soap_json.soap_note.objective}</p>
-                                            </div>
-                                            <div className="p-3 bg-white rounded-lg shadow-sm border">
-                                                <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Assessment</h5>
-                                                <p>{consultation.soap_note.soap_json.soap_note.assessment}</p>
-                                            </div>
-                                            <div className="p-3 bg-white rounded-lg shadow-sm border">
-                                                <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Plan</h5>
-                                                <p>{consultation.soap_note.soap_json.soap_note.plan}</p>
-                                            </div>
+                                <ScrollArea className="flex-1">
+                                    <CardContent className="p-6 space-y-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Diagnosis (ICD-10)</Label>
+                                            <Input
+                                                value={diagnosis}
+                                                onChange={e => setDiagnosis(e.target.value)}
+                                                className="bg-white"
+                                                placeholder="Primary Diagnosis"
+                                            />
                                         </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
-                                            <Loader2 className="h-6 w-6 animate-spin mb-2" />
-                                            <p>Generating SOAP...</p>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Prescription</Label>
+                                            <Textarea
+                                                value={prescription}
+                                                onChange={e => setPrescription(e.target.value)}
+                                                className="bg-white min-h-[100px]"
+                                                placeholder="Rx details..."
+                                            />
                                         </div>
-                                    )}
-                                </CardContent>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Clinical Notes / Private</Label>
+                                            <Textarea
+                                                value={notes}
+                                                onChange={e => setNotes(e.target.value)}
+                                                className="bg-white min-h-[100px]"
+                                                placeholder="Internal notes..."
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </ScrollArea>
+                                <div className="p-4 border-t bg-slate-50 flex justify-between items-center">
+                                    <span className="text-xs text-muted-foreground">Changes autosaved.</span>
+                                    <Button onClick={() => handleSaveClinicalData()} variant="outline" size="sm">
+                                        <Save className="h-4 w-4 mr-2" /> Save Draft
+                                    </Button>
+                                </div>
                             </Card>
-                            <SafetyAlerts warnings={safetyWarnings} />
                         </div>
-
-                        {/* Right: Final Documentation */}
-                        <Card className="flex flex-col border-none shadow-md h-full">
-                            <CardHeader className="py-3 border-b bg-green-50/30">
-                                <CardTitle className="text-sm font-bold flex items-center gap-2 text-green-800">
-                                    <FileText className="h-4 w-4" /> Final Documentation
-                                </CardTitle>
-                            </CardHeader>
-                            <ScrollArea className="flex-1">
-                                <CardContent className="p-6 space-y-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Diagnosis (ICD-10)</Label>
-                                        <Input
-                                            value={diagnosis}
-                                            onChange={e => setDiagnosis(e.target.value)}
-                                            className="bg-white"
-                                            placeholder="Primary Diagnosis"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Prescription</Label>
-                                        <Textarea
-                                            value={prescription}
-                                            onChange={e => setPrescription(e.target.value)}
-                                            className="bg-white min-h-[100px]"
-                                            placeholder="Rx details..."
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Clinical Notes / Private</Label>
-                                        <Textarea
-                                            value={notes}
-                                            onChange={e => setNotes(e.target.value)}
-                                            className="bg-white min-h-[100px]"
-                                            placeholder="Internal notes..."
-                                        />
-                                    </div>
-                                </CardContent>
-                            </ScrollArea>
-                            <div className="p-4 border-t bg-slate-50 flex justify-between items-center">
-                                <span className="text-xs text-muted-foreground">Changes autosaved.</span>
-                                <Button onClick={() => handleSaveClinicalData()} variant="outline" size="sm">
-                                    <Save className="h-4 w-4 mr-2" /> Save Draft
-                                </Button>
-                            </div>
-                        </Card>
-                    </div>
-                )}
-            </div>
-        </div>
+                    )
+                }
+            </div >
+        </div >
     );
 }

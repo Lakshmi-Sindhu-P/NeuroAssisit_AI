@@ -62,23 +62,32 @@ async def process_transcription_only(consultation_id: UUID, audio_file_id: UUID 
                 return
 
             try:
-                # Transcribe with Gemini (Diarization)
-                progress.update(main_task, description=f"[bold yellow]Transcribing Audio with Gemini (File: {audio_file.file_name})...", advance=1)
-                console.log(f"Sending audio to Gemini: {audio_file.file_url}")
+                # Transcribe with AssemblyAI (Matching Patient UI reliability)
+                progress.update(main_task, description=f"[bold yellow]Transcribing Audio with AssemblyAI (File: {audio_file.file_name})...", advance=1)
                 
-                transcript_result = await GeminiService.transcribe_audio_with_diarization(audio_file.file_url)
+                # Construct local file path (AssemblyAI SDK handles upload automatically)
+                import os
+                file_path = os.path.join("uploads", audio_file.file_name)
+                
+                if not os.path.exists(file_path):
+                     # Fallback if path construction fails (e.g. absolute paths in DB)
+                     console.print(f"[warning]File not found at {file_path}, trying absolute URL logic...[/warning]")
+                     # Note: In a real prod env with S3, we would pass the presigned URL.
+                     # Here just fail if local file missing.
+                     raise FileNotFoundError(f"Audio file not found at {file_path}")
+
+                console.log(f"Sending audio to AssemblyAI: {file_path}")
+                
+                transcript_result = await AssemblyAIService.transcribe_audio_async(file_path)
                 
                 # Extract full text
-                transcript_text = transcript_result.get("full_transcript", "")
-                if not transcript_text and "text" in transcript_result:
-                     transcript_text = transcript_result["text"] # Fallback
+                transcript_text = transcript_result.get("text", "")
                 
                 progress.update(main_task, description="[cyan]Saving Transcript to Database...", advance=1)
                 
                 # Save Transcript
                 audio_file.transcription = transcript_text
-                # Note: We could store 'utterances' in a JSON field if the model supported it, 
-                # but for now we rely on the formatted text in 'transcription'.
+                # Note: We aren't storing 'utterances' in DB yet, but could in future.
                 
                 session.add(audio_file)
                 session.commit()
