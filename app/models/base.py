@@ -62,6 +62,11 @@ class PatientProfile(SQLModel, table=True):
     city: Optional[str] = None
     state: Optional[str] = None
     zip_code: Optional[str] = None
+    age: Optional[int] = None
+    gender_identity: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    current_medications: Optional[str] = None  # JSON string list of current meds
     medical_history: Optional[str] = None # Added for Safety Service
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -202,6 +207,9 @@ class AudioFile(SQLModel, table=True):
     file_size: Optional[int] = None
     duration: Optional[float] = None
     transcription: Optional[str] = None # Text field
+    label: Optional[str] = Field(default=None, max_length=50) # User Story US-P-004
+    is_transcript_verified: bool = Field(default=False) 
+    is_uploaded_by_patient: bool = Field(default=False)
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
 
     consultation: Consultation = Relationship(back_populates="audio_files")
@@ -282,4 +290,41 @@ class MedicalTerm(SQLModel, table=True):
     description: Optional[str] = None
     added_by_id: Optional[UUID] = Field(foreign_key="users.id", nullable=True) # Optional tracking
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class Prescription(SQLModel, table=True):
+    """Structured Prescription Model (US-D-009)"""
+    __tablename__ = "prescriptions"
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    consultation_id: UUID = Field(foreign_key="consultations.id", index=True)
+    medication_name: str
+    dosage: str
+    frequency: str
+    duration: str
+    instructions: Optional[str] = None
+    digital_signature: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Relationship could be added to Consultation if needed, but FK is enough for now
+
+class PaymentStatus(str, Enum):
+    PENDING = "PENDING"
+    PAID = "PAID"
+    REFUNDED = "REFUNDED"
+
+class PaymentMethod(str, Enum):
+    CASH = "CASH"
+    CARD = "CARD"
+    UPI = "UPI"
+    INSURANCE = "INSURANCE"
+
+class Bill(SQLModel, table=True):
+    """Billing Model (US-FD-006)"""
+    __tablename__ = "bills"
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    consultation_id: UUID = Field(foreign_key="consultations.id", unique=True)
+    amount: float
+    status: PaymentStatus = Field(sa_column=Column(SAEnum(PaymentStatus, native_enum=False), default=PaymentStatus.PENDING))
+    payment_method: Optional[PaymentMethod] = Field(sa_column=Column(SAEnum(PaymentMethod, native_enum=False), nullable=True))
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

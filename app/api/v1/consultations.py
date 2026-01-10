@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Backgro
 from datetime import datetime, timedelta
 from sqlmodel import Session, select
 from app.core.db import get_session
-from app.models.base import Consultation, ConsultationStatus, Appointment, User, UserRole, AudioFile, SOAPNote, AudioUploaderType, AudioFileType, PatientProfile, DoctorProfile
+from app.models.base import Consultation, ConsultationStatus, Appointment, User, UserRole, AudioFile, SOAPNote, AudioUploaderType, AudioFileType, PatientProfile, DoctorProfile, Bill, PaymentStatus
 from app.api.deps import get_current_user, RoleChecker
 from app.services.consultation_processor import process_transcription_only, process_soap_generation
 from pydantic import BaseModel
@@ -79,9 +79,30 @@ from sqlalchemy.orm import selectinload
 @router.get("/{id}", response_model=ConsultationRead) # Returning DB model direct for now, includes relationships
 def get_consultation(
     id: UUID,
+    reset_temp: bool = False, # NEW Param: If True, clears unverified transcripts (for page refresh)
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
+    # 1. Handle Reset Logic BEFORE loading
+    if reset_temp:
+        print(f"DEBUG_RESET: Reset triggered for consultation {id}")
+        # Find unverified audio files for this consultation
+        unverified_audio = session.exec(
+            select(AudioFile)
+            .where(AudioFile.consultation_id == id)
+            .where(AudioFile.is_transcript_verified == False)
+            .where(AudioFile.transcription != None)
+        ).all()
+        
+        if unverified_audio:
+            print(f"DEBUG_RESET: Deleting {len(unverified_audio)} unverified transcripts")
+            for audio in unverified_audio:
+                audio.transcription = None # WIPE content
+                session.add(audio)
+            session.commit()
+        else:
+             print("DEBUG_RESET: No unverified transcripts found to delete.")
+
     consultation = session.exec(
         select(Consultation)
         .where(Consultation.id == id)
@@ -178,6 +199,16 @@ async def upload_audio(
                 raise HTTPException(status_code=403, detail="Front Desk can only upload audio once during check-in.")
             
         # Validation
+        # 1. Size Limit (50MB)
+        file.file.seek(0, 2)
+        file_size = file.file.tell()
+        file.file.seek(0)
+        
+        if file_size > 50 * 1024 * 1024: # 50 MB
+             print(f"File too large: {file_size} bytes")
+             raise HTTPException(status_code=413, detail="File too large. Maximum size is 50MB.")
+
+        # 2. Format
         if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.aac', '.webm')): # Case insensitive check
             print(f"Invalid file format: {file.filename}")
             raise HTTPException(status_code=400, detail="Invalid file format")
@@ -304,7 +335,8 @@ async def upload_audio(
             uploaded_by=uploader_type,
             file_type=file_type, # Correctly mapping to DB column file_type
             file_name=safe_filename, # Store the convenient name
-            file_url=file_path
+            file_url=file_path,
+            is_transcript_verified=False # Explicitly set Unverified by default
         )
         session.add(audio_file)
         
@@ -351,6 +383,10 @@ async def reprocess_audio(
          raise HTTPException(status_code=404, detail="No consultation audio found to process")
 
     print(f"Reprocessing audio for consultation {id}, file {audio_file.file_name}")
+
+    # Mark as unverified on reprocess (it's a new attempt)
+    audio_file.is_transcript_verified = False
+    session.add(audio_file)
 
     # Update status to show something is happening
     consultation.status = ConsultationStatus.IN_PROGRESS
@@ -466,6 +502,8 @@ def update_consultation(
         
         if audio_file:
             audio_file.transcription = update_data.transcript
+            # MARK AS VERIFIED since user is manually saving/updating it
+            audio_file.is_transcript_verified = True 
             session.add(audio_file)
         
     session.add(consultation)
@@ -551,6 +589,23 @@ def finish_consultation(
 
         if updated:
             session.add(profile)
+
+    # --- AUTO-GENERATE BILL (US-FD-006) ---
+    existing_bill = session.exec(select(Bill).where(Bill.consultation_id == id)).first()
+    if not existing_bill:
+        amount = 50.0 # Default
+        # Fetch Doctor Fee
+        doctor_user = session.get(User, consultation.doctor_id)
+        if doctor_user and doctor_user.doctor_profile and doctor_user.doctor_profile.consultation_fee:
+            amount = doctor_user.doctor_profile.consultation_fee
+            
+        bill = Bill(
+            consultation_id=id,
+            amount=amount,
+            status=PaymentStatus.PENDING
+        )
+        session.add(bill)
+        print(f"Auto-generated Bill for Consultation {id}: ${amount}")
 
     session.add(consultation)
     session.commit()

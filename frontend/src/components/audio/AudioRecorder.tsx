@@ -101,7 +101,17 @@ export function AudioRecorder({ onRecordingComplete, onReset, className }: Audio
             setRecordingTime(0);
 
             timerRef.current = setInterval(() => {
-                setRecordingTime(prev => prev + 1);
+                setRecordingTime(prev => {
+                    if (prev >= 900) { // 15 Minute Limit (15 * 60)
+                        stopRecording();
+                        toast({
+                            title: "Time Limit Reached",
+                            description: "Recording automatically stopped at 15 minutes.",
+                        });
+                        return prev;
+                    }
+                    return prev + 1;
+                });
             }, 1000);
 
             animationFrameRef.current = requestAnimationFrame(updateWaveform);

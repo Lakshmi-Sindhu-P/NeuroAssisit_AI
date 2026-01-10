@@ -25,7 +25,8 @@ import {
     Loader2,
     LayoutDashboard,
     Mic,
-    RefreshCw
+    RefreshCw,
+    ExternalLink
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -83,7 +84,7 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
     useEffect(() => {
         if (consultationId) {
             setCurrentStep(1); // Reset to step 1
-            fetchConsultation();
+            fetchConsultation(false, true); // Reset temporary transcripts on fresh load
             fetchIntakeSummary();
         } else {
             resetState();
@@ -98,10 +99,15 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
         setTranscriptionText("");
     };
 
-    const fetchConsultation = async (silent = false) => {
+    const fetchConsultation = async (silent = false, resetTemp = false) => {
         if (!silent) setLoading(true);
         try {
-            const res = await api.get(`/consultations/${consultationId}`);
+            // Fix: 'api' uses fetch, which doesn't support 'params'. Manually append query string.
+            const url = resetTemp
+                ? `/consultations/${consultationId}?reset_temp=true`
+                : `/consultations/${consultationId}`;
+
+            const res = await api.get(url);
             const data = res.data;
             setConsultation(data);
             setNotes(data.notes || "");
@@ -166,6 +172,7 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
 
     const handleRecordingComplete = async (blob: Blob) => {
         setAiStatus("processing");
+        setTranscriptionText(""); // Clear previous transcript
         const formData = new FormData();
         formData.append("file", blob, `consultation_${consultationId}.webm`);
         formData.append("source", "CONSULTATION");
@@ -182,6 +189,7 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
 
     const handleReprocessAudio = async () => {
         setAiStatus("processing");
+        setTranscriptionText(""); // Clear previous transcript
         try {
             await api.post(`/consultations/${consultationId}/reprocess_audio`);
             toast.success("Transcription started.");
@@ -209,8 +217,12 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
 
     const handleComplete = async () => {
         await handleSaveClinicalData(true);
-        await api.patch(`/consultations/${consultationId}/finish`);
-        toast.success("Consultation completed!");
+        const res = await api.patch(`/consultations/${consultationId}/finish`);
+
+        // Show Billing Confirmation
+        const billAmount = res.data?.bill?.amount || 50.00; // Fallback or fetch from response
+        toast.success(`Consultation completed! Bill of $${billAmount} generated.`);
+
         onComplete();
     };
 
@@ -315,6 +327,7 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
                             patient={consultation?.patient_profile || consultation?.appointment?.patient?.patient_profile}
                             intakeSummary={intakeData?.summary}
                             intakeTranscript={intakeData?.full_transcript}
+                            appointmentReason={consultation?.appointment?.reason || consultation?.notes}
                         />
                         <div className="flex justify-end mt-4">
                             <Button size="lg" onClick={() => setCurrentStep(2)} className="shadow-lg">
@@ -344,6 +357,32 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
                                         onRecordingComplete={(blob) => handleRecordingComplete(blob)}
                                         className="bg-background shadow-inner"
                                     />
+
+                                    <div className="relative mt-6 pt-6 border-t border-border flex flex-col items-center">
+                                        <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wider">or upload existing file</p>
+                                        <div className="flex gap-3 w-full">
+                                            <Input
+                                                type="file"
+                                                accept=".mp3,.wav,.m4a,.webm"
+                                                className="hidden"
+                                                id="audio-upload"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleRecordingComplete(file);
+                                                }}
+                                            />
+                                            <Button
+                                                variant="outline"
+                                                className="w-full border-dashed border-2 hover:bg-accent/50 hover:border-primary/50 transition-all font-medium text-muted-foreground"
+                                                onClick={() => document.getElementById('audio-upload')?.click()}
+                                                disabled={aiStatus === "processing"}
+                                            >
+                                                <ExternalLink className="h-4 w-4 mr-2" />
+                                                Select Audio File (MP3/WAV/M4A)
+                                            </Button>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-2">Max size: 50MB. Securely encrypted.</p>
+                                    </div>
                                 </CardContent>
                             </Card>
 
@@ -442,19 +481,31 @@ export function ActiveConsultation({ consultationId, patientName, onComplete }: 
                                             <div className="space-y-4">
                                                 <div className="p-3 bg-white rounded-lg shadow-sm border">
                                                     <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Subjective</h5>
-                                                    <p>{consultation.soap_note.soap_json.soap_note.subjective}</p>
+                                                    <Textarea
+                                                        defaultValue={consultation.soap_note.soap_json.soap_note.subjective}
+                                                        className="min-h-[80px] text-sm"
+                                                    />
                                                 </div>
                                                 <div className="p-3 bg-white rounded-lg shadow-sm border">
                                                     <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Objective</h5>
-                                                    <p>{consultation.soap_note.soap_json.soap_note.objective}</p>
+                                                    <Textarea
+                                                        defaultValue={consultation.soap_note.soap_json.soap_note.objective}
+                                                        className="min-h-[80px] text-sm"
+                                                    />
                                                 </div>
                                                 <div className="p-3 bg-white rounded-lg shadow-sm border">
                                                     <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Assessment</h5>
-                                                    <p>{consultation.soap_note.soap_json.soap_note.assessment}</p>
+                                                    <Textarea
+                                                        defaultValue={consultation.soap_note.soap_json.soap_note.assessment}
+                                                        className="min-h-[80px] text-sm"
+                                                    />
                                                 </div>
                                                 <div className="p-3 bg-white rounded-lg shadow-sm border">
                                                     <h5 className="font-bold text-xs uppercase text-muted-foreground mb-1">Plan</h5>
-                                                    <p>{consultation.soap_note.soap_json.soap_note.plan}</p>
+                                                    <Textarea
+                                                        defaultValue={consultation.soap_note.soap_json.soap_note.plan}
+                                                        className="min-h-[80px] text-sm"
+                                                    />
                                                 </div>
                                             </div>
                                         ) : (

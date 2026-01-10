@@ -23,7 +23,7 @@ class GeminiService:
         """
         Generates a concise (2-3 sentence) summary of the pre-visit intake transcription.
         """
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         prompt = f"""
         You are an expert medical scribe assisting a Neurologist.
@@ -57,7 +57,7 @@ class GeminiService:
         """
         Generates a clinical document (referral, certificate, etc.) based on the SOAP note.
         """
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         prompt = f"""
         You are an expert medical administrative assistant.
@@ -133,9 +133,9 @@ class GeminiService:
                 f"Medical History/Notes: {patient_context.get('notes', 'None provided')}"
             )
             
-        # Initialize Model (Gemini 2.0 Flash)
+        # Initialize Model (Gemini 2.5 Flash)
         model = genai.GenerativeModel(
-            'gemini-2.0-flash',
+            'gemini-2.5-flash',
             generation_config={"response_mime_type": "application/json"}
         )
         
@@ -255,8 +255,9 @@ class GeminiService:
             if uploaded_file.state.name == "FAILED":
                 raise Exception("Audio file processing failed on Gemini server.")
 
+            # Upgrade to Gemini 2.5 Flash for initial transcription as well
             model = genai.GenerativeModel(
-                'gemini-2.0-flash',
+                'gemini-2.5-flash',
                 generation_config={"response_mime_type": "application/json"}
             )
             
@@ -299,3 +300,124 @@ class GeminiService:
         except Exception as e:
             logger.error(f"Gemini Transcription failed: {e}")
             raise e
+
+    @staticmethod
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2, min=4, max=30),
+        reraise=True
+    )
+    async def refine_transcript_diarization(transcript_text: str, utterances: List[Dict[str, Any]]) -> str:
+        """
+        Takes a raw transcript with speaker labels (Speaker A, Speaker B) and uses Gemini 
+        to infer who is the Doctor and who is the Patient based on context.
+        Returns a formatted string: "Doctor: ... \n Patient: ..."
+        """
+        if settings.USE_MOCK_AI:
+            return "Doctor: Mock Doctor text.\nPatient: Mock Patient text."
+
+        # 1. Format raw conversation for the prompt
+        raw_conversation = ""
+        for u in utterances:
+            speaker_label = u.get("speaker", "Unknown")
+            raw_conversation += f"Speaker {speaker_label}: {u.get('text', '')}\n"
+
+        # Use Gemini 2.5 Flash as requested for better label segmentation
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        prompt = f"""
+        You are an expert medical transcription editor. 
+        Your task is to take a raw transcript with IMPERFECT speaker separation and fix it.
+        The conversion often merges the Doctor and Patient into a single block, or mislabels them (e.g., Speaker A asking a question AND answering it).
+
+        Your Goals:
+        1. **Identify Roles**: accurately label "Doctor" vs "Patient" based on *what* is said (Doctor asks, Patient answers/complains).
+        2. **Semantic Splitting**: If a single block contains multiple turns (e.g., "How old are you? I'm 29"), **SPLIT** it into separate lines with correct labels.
+        3. **Correction**: Even if the input says "Speaker A" said everything, if the content clearly switches from Doctor to Patient, split it.
+
+        Rules:
+        - **Doctor**: Asks medical questions, gives instructions, prescribes med.
+        - **Patient**: Reports symptoms, answers queries, expresses pain/concern.
+        - **Format**:
+            **Doctor:** [Text]
+            
+            **Patient:** [Text]
+        - **STRICT VALIDITY**: Do NOT change the words spoken. Only fix the speakers and line breaks. Do not summarize.
+
+        Raw Transcript:
+        {raw_conversation}
+        
+        Formatted Transcript:
+        """
+        
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None, 
+            lambda: model.generate_content(prompt)
+        )
+        return response.text.strip()
+
+    @staticmethod
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2, min=4, max=30),
+        reraise=True
+    )
+    async def check_drug_interactions_async(current_meds: str, new_prescription: str) -> List[Dict[str, str]]:
+        """
+        Analyzes potential drug interactions between current medications and new prescriptions using Gemini.
+        Returns a list of warnings.
+        """
+        if settings.USE_MOCK_AI:
+            return [{
+                "type": "CONTRAINDICATION",
+                "message": "Mock Warning: Potential interaction detected.",
+                "drug": "Mock Drug",
+                "condition": "Mock Condition"
+            }]
+
+        model = genai.GenerativeModel(
+            'gemini-2.5-flash',
+            generation_config={"response_mime_type": "application/json"}
+        )
+        
+        prompt = f"""
+        You are an expert Clinical Pharmacist and AI Safety Guardrail.
+        Analyze the following medication list for potential Drug-Drug Interactions (DDIs) or Drug-Condition Contraindications.
+
+        Patient Current Medications/History:
+        {current_meds}
+
+        New Prescription Attempt:
+        {new_prescription}
+
+        Task:
+        1. Identify any **MAJOR** or **MODERATE** interactions.
+        2. Ignore minor interactions unless critical.
+        3. Return a JSON list of warnings.
+
+        Required JSON Structure:
+        [
+            {{
+                "type": "CONTRAINDICATION" | "WARNING",
+                "message": "Clear explanation of the risk (e.g., Risk of Serotonin Syndrome).",
+                "drug": "Name of the drug causing issue",
+                "severity": "HIGH" | "MODERATE"
+            }}
+        ]
+        
+        If no interactions, return empty list [].
+        """
+        
+        loop = asyncio.get_event_loop()
+        try:
+            print("   (Gemini) Checking Drug Interactions...")
+            response = await loop.run_in_executor(
+                None, 
+                lambda: model.generate_content(prompt)
+            )
+            return json.loads(response.text)
+        except Exception as e:
+            print(f"Safety Check Failed: {e}")
+            return [] # Fail safe: return no warnings rather than blocking, or handle upstream
+

@@ -80,13 +80,30 @@ async def process_transcription_only(consultation_id: UUID, audio_file_id: UUID 
                 
                 transcript_result = await AssemblyAIService.transcribe_audio_async(file_path)
                 
-                # Extract full text
+                # Extract full text & utterances
                 transcript_text = transcript_result.get("text", "")
+                utterances = transcript_result.get("utterances", [])
                 
+                progress.update(main_task, description="[cyan]Refining Transcript Diarization (AI Guessing Speakers)...", advance=0)
+
+                # Process Diarization if utterances exist
+                final_transcript = transcript_text
+                if utterances:
+                    try:
+                        console.log("Refining speaker labels (Speaker A -> Doctor)...")
+                        final_transcript = await GeminiService.refine_transcript_diarization(transcript_text, utterances)
+                    except Exception as e:
+                        console.print(f"[warning]Diarization refinement failed, using raw text: {e}[/warning]")
+                        # Fallback to crude "Speaker A" format if Gemini fails
+                        formatted_lines = []
+                        for u in utterances:
+                             formatted_lines.append(f"Speaker {u.get('speaker', '?')}: {u.get('text', '')}")
+                        final_transcript = "\n\n".join(formatted_lines)
+
                 progress.update(main_task, description="[cyan]Saving Transcript to Database...", advance=1)
                 
                 # Save Transcript
-                audio_file.transcription = transcript_text
+                audio_file.transcription = final_transcript
                 # Note: We aren't storing 'utterances' in DB yet, but could in future.
                 
                 session.add(audio_file)
@@ -294,7 +311,7 @@ async def process_soap_generation(consultation_id: UUID):
                 
                 # 5b. Safety Checks
                 if patient_profile:
-                    warnings = SafetyService.check_drug_interactions(soap_note, patient_profile)
+                    warnings = await SafetyService.check_drug_interactions(soap_note, patient_profile)
                     consultation.safety_warnings = warnings
                     if warnings:
                         console.log(f"[warning]Safety Warnings Found: {len(warnings)}[/warning]")

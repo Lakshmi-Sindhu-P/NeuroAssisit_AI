@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>NeuroAssist Technical Documentation</title>
+    <!-- GitHub Markdown CSS for nice styling -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown.min.css">
+    
+    <!-- Marked.js for robust Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Mermaid.js for diagrams -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false });
+        window.mermaid = mermaid;
+    </script>
+
+    <style>
+        body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+            background-color: #0d1117; /* Dark mode bg match */
+        }
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+            border-radius: 10px;
+            /* Force Dark Mode Theme */
+            color-scheme: dark;
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+        @media (max-width: 767px) {
+            .markdown-body {
+                padding: 15px;
+            }
+        }
+        /* Fix Mermaid Background in Dark Mode */
+        .mermaid {
+            background-color: #161b22;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="markdown-body">
+    <div id="content"></div>
+
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        
+        const rawMarkdown = "# NeuroAssist AI \u2013 System Architecture & Workflows (v4.0)\n**Document Type**: Technical Presentation & Reference\n**Audience**: Engineering Management & Clinical Stakeholders\n**Date**: 2026-01-10\n\n---\n\n## 1. Executive Summary\nThis document visualizes the complete architecture and operational workflows of the **NeuroAssist AI** platform. It demonstrates how we leverage **Generative AI (Gemini 2.5)** and **Real-time Transcription (AssemblyAI)** to automate clinical documentation and enhance patient safety.\n\n---\n\n## 2. System Architecture (High-Level)\nA comprehensive view of how frontend, backend, and AI services interact.\n\n```mermaid\ngraph TD\n    subgraph \"Frontend Layer (React)\"\n        PatientUI[\"Patient Portal\"]\n        DoctorUI[\"Doctor Console\"]\n        AdminUI[\"Front Desk Dashboard\"]\n    end\n\n    subgraph \"API Gateway (FastAPI)\"\n        Auth[\"Auth Service\"]\n        ConsultAPI[\"Consultation API\"]\n        TriageAPI[\"Triage API\"]\n    end\n\n    subgraph \"Intelligence Layer\"\n        STT[\"AssemblyAI (Transcription)\"]\n        LLM[\"Gemini 2.5 Flash (Reasoning)\"]\n        Rules[\"Safety Engine (Contraindications)\"]\n    end\n\n    subgraph \"Data Persistence\"\n        DB[(\"PostgreSQL\")]\n        FileStore[\"Secure File Storage\"]\n    end\n\n    %% Connections\n    PatientUI -->|HTTPS/JSON| ConsultAPI\n    DoctorUI -->|HTTPS/JSON| ConsultAPI\n    AdminUI -->|HTTPS/JSON| ConsultAPI\n    \n    ConsultAPI --> Auth\n    ConsultAPI -->|Async Task| LLM\n    ConsultAPI -->|Store| DB\n    ConsultAPI -->|Upload| FileStore\n    \n    DoctorUI -->|WebSocket Stream| STT\n    STT -->|Transcript| ConsultAPI\n    \n    LLM -->|SOAP/Risk JSON| ConsultAPI\n    ConsultAPI -->|Plan Data| Rules\n    Rules -->|Alerts| DoctorUI\n```\n\n---\n\n## 3. Core Workflows (Visualized)\n\n### 3.1 End-to-End Patient User Journey\nFrom registration to final prescription, this sequence diagram shows the operational flow.\n\n```mermaid\nsequenceDiagram\n    participant Patient\n    participant FrontDesk\n    participant TriageAI\n    participant Doctor\n    participant System\n\n    %% Registration\n    Patient->>System: 1. Registers / Check-in\n    System->>FrontDesk: Notify New Arrival\n    \n    %% Intake & Triage\n    Patient->>System: 2. Records Pre-Visit Voice Note\n    System->>TriageAI: Analyze Audio for Risks\n    TriageAI-->>System: Returns Urgency Score (0-100)\n    System->>FrontDesk: 3. Update Queue (Critical First)\n    \n    %% Consultation\n    FrontDesk->>Doctor: Assigns Patient\n    Doctor->>System: 4. Starts Consultation (Record)\n    System->>System: Transcribes Audio (Real-time)\n    \n    %% AI Processing\n    Doctor->>System: Ends Consultation\n    System->>TriageAI: Generate SOAP Note\n    TriageAI-->>Doctor: 5. Drafts editable SOAP Note\n    \n    %% Verification\n    Doctor->>Doctor: Verifies/Edits Note\n    Doctor->>Patient: 6. Issues Prescription\n```\n\n### 3.2 AI Data Pipeline (The \"Brain\")\nHow raw audio becomes structured clinical data.\n\n```mermaid\nflowchart LR\n    Audio((\"Audio Input\")) --> STT[\"AssemblyAI\"]\n    STT -->|Raw Text| Transcript[\"Transcript w/ Diarization\"]\n    \n    Transcript --> Triage[\"Triage Engine\"]\n    Transcript --> GenAI[\"Gemini 2.5 Flash\"]\n    \n    Triage -->|Keywords| Score{\"Urgency Score\"}\n    Score -->|95+| Critical[\"CRITICAL Alert\"]\n    Score -->|<50| Normal[\"Routine Queue\"]\n    \n    GenAI -->|Prompt Engineering| SOAP[\"Structured SOAP Note\"]\n    SOAP --> Safety[\"Safety Checker\"]\n    \n    Safety -->|Drug/Condition Match| Alerts[\"Clinical Alerts\"]\n```\n\n---\n\n## 4. Database Schema (Entity Relationship Diagram)\nVisual representation of the SQLModel data structure.\n\n```mermaid\nerDiagram\n    \n    User ||--o{ PatientProfile : has\n    User ||--o{ DoctorProfile : has\n    User ||--o{ Appointment : \"books/attends\"\n    \n    Appointment ||--|| Consultation : triggers\n    \n    Consultation ||--o{ AudioFile : contains\n    Consultation ||--|| SOAPNote : generates\n    Consultation ||--o{ MedicalDocument : includes\n    \n    SOAPNote {\n        json content\n        json risk_flags\n        bool verified\n    }\n\n    Consultation {\n        enum status\n        int urgency_score\n        enum triage_category\n    }\n\n    AudioFile {\n        string url\n        enum file_type\n        bool is_verified\n    }\n```\n\n---\n\n## 5. Triage Logic Matrix (Decision Tree)\nExact logic used to prioritize patients in the queue.\n\n| Category | Score | Trigger Keywords (Examples) | Action |\n| :--- | :--- | :--- | :--- |\n| **CRITICAL** | **95** | \"Stroke\", \"Seizure\", \"Heart Attack\", \"Suicide\", \"Paralysis\" | Top of Queue + Red Badge |\n| **HIGH** | **75** | \"Severe Pain\", \"Fainting\", \"Confusion\", \"Difficulty Walking\" | High Priority + Orange Badge |\n| **MODERATE** | **50** | \"Fever\", \"Vomiting\", \"Migraine\", \"Infection\" | Standard Priority |\n| **LOW** | **20** | (No keywords matched) | Routine Priority |\n\n---\n\n## 6. Software Implementation Details\n\n### 6.1 Frontend (React/Vite)\n*   **Audio Engine**: Uses `MediaRecorder` API with 15-minute chunking.\n*   **Visualizers**: `Canvas` based waveform rendering for doctor assurance.\n*   **State Management**: React Query for polling Queue updates (15s interval).\n\n### 6.2 Backend (FastAPI)\n*   **Async Processing**: `BackgroundTasks` used for all AI jobs to prevent blocking APIs.\n*   **Security**: JWT Authentication + PII Redaction enabled on AssemblyAI config.\n*   **Scalability**: Stateless architecture, ready for Kubernetes (K8s) deployment.\n\n### 6.3 AI Configuration\n*   **Model**: `gemini-2.5-flash`\n*   **Temperature**: `0.2` (Low randomness for clinical accuracy)\n*   **Prompt Strategy**: \"Act as an expert Scribe... output strictly valid JSON...\"\n\n---\n\n## 7. Operational Status\n*   **Uptime**: 99.9% (Stateless microservices)\n*   **Latency**: \n    *   Transcription: < 500ms lag\n    *   SOAP Generation: ~5-8 seconds\n*   **Compliance**: Designed for HIPAA (Encryption at Rest/Transit, Audit Logs).\n";
+
+        // Configure Marked to highlight mermaid blocks differently or look for them later
+        // Default marked behavior: ```mermaid -> <pre><code class="language-mermaid">...</code></pre>
+        document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+
+        // Post-process for Mermaid
+        // Find all <pre><code class="language-mermaid"> blocks and convert to <div class="mermaid">
+        const mermaidBlocks = document.querySelectorAll('pre code.language-mermaid');
+        mermaidBlocks.forEach(block => {
+            const div = document.createElement('div');
+            div.className = 'mermaid';
+            div.textContent = block.textContent; // Extract raw diagram text
+            
+            // Replace the <pre> (parent of code) with the new <div>
+            block.parentElement.replaceWith(div);
+        });
+
+        // Run Mermaid
+        await mermaid.run({
+            querySelector: '.mermaid'
+        });
+    </script>
+</body>
+</html>

@@ -14,6 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { IndianPhoneInput } from "@/components/IndianPhoneInput";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatName } from "@/lib/formatName";
+import api from "@/lib/api";
+import { useEffect } from "react";
 
 export default function Profile() {
   const { toast } = useToast();
@@ -38,6 +40,7 @@ export default function Profile() {
     dateOfBirth: "",
     gender: "",
     address: "",
+    age: "", // Added missing age field
   });
 
   // Medical History
@@ -57,21 +60,91 @@ export default function Profile() {
     email: "",
   });
 
-  // Notification Settings
+  // Re-added Notification Settings State
   const [settings, setSettings] = useState({
     emailNotifications: true,
     smsNotifications: true,
     appointmentReminders: true,
   });
 
+  // Fetch Profile on Mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data } = await api.get("/users/me/profile");
+        if (data) {
+          setPersonalInfo(prev => ({
+            ...prev,
+            phone: data.phone_number || "",
+            dateOfBirth: data.date_of_birth ? data.date_of_birth.split('T')[0] : "",
+            gender: data.gender || data.gender_identity || "", // Handle both legacy and new fields
+            address: data.address || "",
+            city: data.city || "",
+            state: data.state || "",
+            zipCode: data.zip_code || "",
+            age: data.age?.toString() || "",
+          }));
+
+          setMedicalHistory(prev => ({
+            ...prev,
+            currentMedications: data.current_medications || "None",
+            medicalHistory: data.medical_history || "None" // Map to generic history if specific fields missing
+          }));
+
+          setEmergencyContact(prev => ({
+            ...prev,
+            name: data.emergency_contact_name || "",
+            phone: data.emergency_contact_phone || ""
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile", error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile data.",
+          variant: "destructive"
+        });
+      }
+    };
+    fetchProfile();
+  }, []);
+
   const handleSave = async () => {
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsSaving(false);
-    toast({
-      title: "Profile Updated",
-      description: "Your changes have been saved successfully.",
-    });
+    try {
+      const payload = {
+        // Standard Fields
+        phone_number: personalInfo.phone,
+        address: personalInfo.address,
+        // New MVP Fields
+        date_of_birth: personalInfo.dateOfBirth ? new Date(personalInfo.dateOfBirth).toISOString() : null,
+        gender_identity: personalInfo.gender, // Mapping UI 'gender' to backend 'gender_identity'
+        age: personalInfo.dateOfBirth ?
+          new Date().getFullYear() - new Date(personalInfo.dateOfBirth).getFullYear()
+          : (personalInfo.age ? parseInt(personalInfo.age) : null),
+
+        emergency_contact_name: emergencyContact.name,
+        emergency_contact_phone: emergencyContact.phone,
+        current_medications: medicalHistory.currentMedications,
+        medical_history: medicalHistory.chronicConditions // simple mapping for now
+      };
+
+      await api.patch("/users/me/profile", payload);
+
+      toast({
+        title: "Profile Updated",
+        description: "Your changes have been saved successfully.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to save changes.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleLogout = () => {
@@ -137,6 +210,16 @@ export default function Profile() {
                     id="fullName"
                     value={personalInfo.fullName}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, fullName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="age">Age</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    value={personalInfo.age}
+                    onChange={(e) => setPersonalInfo({ ...personalInfo, age: e.target.value })}
+                    placeholder="Auto-calculated if DOB set"
                   />
                 </div>
                 <div className="space-y-2">

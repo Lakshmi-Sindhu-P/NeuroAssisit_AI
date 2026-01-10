@@ -1,0 +1,276 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroAssist SRD v3.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad:true, theme: 'neutral'});</script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            overflow-y: auto;
+            flex-shrink: 0;
+            display: none; /* Hidden on mobile by default */
+        }
+        @media(min-width: 1024px) { .sidebar { display: block; } }
+        
+        .sidebar h3 { font-size: 0.875rem; text-transform: uppercase; color: #64748b; margin-bottom: 1rem; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar li { margin-bottom: 0.5rem; }
+        .sidebar a { text-decoration: none; color: #475569; font-size: 0.95rem; transition: color 0.2s; }
+        .sidebar a:hover { color: var(--primary); }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            padding: 2rem 4rem;
+            overflow-y: auto;
+            max-width: 1200px;
+        }
+        
+        /* Typography */
+        h1 { font-size: 2.25rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem; letter-spacing: -0.025em; }
+        h2 { font-size: 1.5rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; margin-top: 3rem; color: #334155; }
+        h3 { font-size: 1.25rem; margin-top: 2rem; color: #475569; }
+        p, li { line-height: 1.7; color: #334155; }
+
+        /* Requirement Cards */
+        ul { padding-left: 1.5rem; }
+        li { margin-bottom: 0.5rem; }
+        /* Highlight Requirement IDs if they follow standard bold formatting */
+        strong { color: #0f172a; font-weight: 600; }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        th { background: #f1f5f9; text-align: left; padding: 1rem; font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 1rem; border-top: 1px solid var(--border); font-size: 0.95rem; }
+        tr:hover td { background: #f8fafc; }
+
+        /* Mermaid */
+        .mermaid {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header Block */
+        .doc-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 3rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h3>Contents</h3>
+        <ul><li><a href="#1.-system-architecture--deployment">1. System Architecture & Deployment</a></li><li><a href="#2.-api-contract">2. API Contract Requirements</a></li><li><a href="#3.-failure-mode--effects-analysis-(fmea)">3. Failure Mode & Effects Analysis (FMEA)</a></li><li><a href="#4.-audio-capture--transcription">4. Audio Capture & Transcription</a></li><li><a href="#5.-soap-note-generation">5. SOAP Note Generation</a></li><li><a href="#6.-triage--queue-management">6. Triage & Queue Management</a></li><li><a href="#7.-ui/ux-component-specifications">7. UI/UX Component Specifications</a></li><li><a href="#8.-security--compliance">8. Security & Compliance</a></li><li><a href="#9.-performance-standards">9. Performance Standards</a></li><li><a href="#10.-traceability-matrix">10. Traceability Matrix</a></li><li><a href="#11.-database-schema-(visual)">11. Database Schema (Visual)</a></li></ul>
+    </div>
+    <div class="main">
+        <div class="doc-header">
+            <span class="badge">Official Specification</span>
+<h1>NeuroAssist AI – Detailed Software Requirements Document (SRD)</h1>
+</div>
+<p><strong>Version</strong>: 4.0 (MAX Requirements)</p>
+<p><strong>Version</strong>: 4.0 (MAX Requirements)</p>
+<p><strong>Version</strong>: 4.0 (MAX Requirements)</p>
+<br>
+<blockquote style='border-left: 4px solid var(--primary); padding-left: 1rem; color: #64748b; font-style: italic;'> **Purpose**: This is the definitive engineering specification. It includes API contracts, Failure Mode Analysis (FMEA), UI component specs, and full traceability.</blockquote>
+<br>
+<p><strong>Version</strong>: 4.0 (MAX Requirements)</p>
+<br>
+<h2 id="1.-system-architecture--deployment">1. System Architecture & Deployment</h2>
+<br>
+<li>  <strong>SRD-1.1</strong>: The system <strong>shall</strong> be architected as a set of Docker containers: Frontend (React/Nginx), Backend (FastAPI/Uvicorn), and Database (PostgreSQL).</li>
+<li>  <strong>SRD-1.2</strong>: The backend service <strong>shall</strong> be stateless to allow horizontal scaling behind a load balancer.</li>
+<li>  <strong>SRD-1.3</strong>: The system <strong>shall</strong> be deployable on a local developer machine using `docker-compose`.</li>
+<li>  <strong>SRD-1.4</strong>: The system <strong>shall</strong> be compatible with cloud-managed PostgreSQL services (e.g., AWS RDS, GCP Cloud SQL).</li>
+<li>  <strong>SRD-1.5</strong>: All inter-service and client-server communication <strong>shall</strong> be encrypted using TLS 1.2 or higher (HTTPS).</li>
+<br>
+<h3>1.1 Architecture Diagram</h3>
+<div class="mermaid">
+graph TD
+User[User: Doctor/Staff] -->|HTTPS| FE[Frontend: React]
+FE -->|API| BE[Backend: FastAPI]
+BE -->|SQL| DB[(PostgreSQL)]
+BE -->|Async| AI[AI Services: Gemini/AssemblyAI]
+</div>
+<br>
+<p>  <strong>SRD-1.5</strong>: All inter-service and client-server communication <strong>shall</strong> be encrypted using TLS 1.2 or higher (HTTPS).</p>
+<br>
+<h2 id="2.-api-contract">2. API Contract Requirements</h2>
+<br>
+<p>  <strong>SRD-1.5</strong>: All inter-service and client-server communication <strong>shall</strong> be encrypted using TLS 1.2 or higher (HTTPS).</p>
+<br>
+<h3>2.1 Consultation Endpoints</h3><table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>SRD Requirement</th></tr></thead><tbody><tr><td>`POST`</td><td>`/api/v1/consultations`</td><td>**SRD-2.1.1**: Shall accept `patient_id` and create a `SCHEDULED` record.</td></tr>
+<tr><td>`POST`</td><td>`/api/v1/consultations/{id}/upload`</td><td>**SRD-2.1.2**: Shall accept `multipart/form-data` audio file (< 50MB).</td></tr>
+<tr><td>`GET`</td><td>`/api/v1/consultations/{id}/transcript`</td><td>**SRD-2.1.3**: Shall return 403 Forbidden for `FRONT_DESK` role.</td></tr>
+<br>
+<h3>2.2 Triage Endpoints</h3><tr><td>Method</td><td>Endpoint</td><td>SRD Requirement</td></tr>
+<tr><td>`GET`</td><td>`/api/v1/admin/triage_queue`</td><td>**SRD-2.2.1**: Shall return list sorted by `urgency_score` DESC.</td></tr>
+<br>
+<p>  <strong>SRD-1.5</strong>: All inter-service and client-server communication <strong>shall</strong> be encrypted using TLS 1.2 or higher (HTTPS).</p>
+<br>
+<h2 id="3.-failure-mode--effects-analysis-(fmea)">3. Failure Mode & Effects Analysis (FMEA)</h2>
+<br>
+<p>  <strong>SRD-1.5</strong>: All inter-service and client-server communication <strong>shall</strong> be encrypted using TLS 1.2 or higher (HTTPS).</p>
+<br><tr><td>Failure Mode</td><td>Severity</td><td>Required System Response</td></tr>
+<tr><td>**STT API Down**</td><td>High</td><td>**SRD-3.1**: Queue the job for retry (exponential backoff x3). Notify user "Processing Delayed".</td></tr>
+<tr><td>**LLM Hallucination**</td><td>Med</td><td>**SRD-3.2**: Display "AI Generated - Verify Content" warning. Allow manual edit.</td></tr>
+<tr><td>**Microphone Blocked**</td><td>High</td><td>**SRD-3.3**: Show modal "Enable Mic Access" with link to browser settings.</td></tr>
+<tr><td>**DB Connection Lost**</td><td>Critical</td><td>**SRD-3.4**: Return HTTP 503. Frontend shows "System Maintenance" page.</td></tr>
+<br>
+<p>  <strong>SRD-1.5</strong>: All inter-service and client-server communication <strong>shall</strong> be encrypted using TLS 1.2 or higher (HTTPS).</p>
+<br>
+<h2 id="4.-audio-capture--transcription">4. Audio Capture & Transcription</h2>
+<br>
+<li>  <strong>SRD-4.1</strong>: The frontend <strong>shall</strong> provide a single, accessible UI control to toggle recording Start/Stop.</li>
+<li>  <strong>SRD-4.2</strong>: The frontend <strong>shall</strong> render a real-time visual waveform of the audio input.</li>
+<li>  <strong>SRD-4.3</strong>: The system <strong>shall</strong> automatically stop recording if the duration exceeds 15 minutes.</li>
+<li>  <strong>SRD-4.4</strong>: The system <strong>shall</strong> utilize the AssemblyAI API for asynchronous speech-to-text processing.</li>
+<li>  <strong>SRD-4.5</strong>: The transcription request <strong>shall</strong> enable Speaker Diarization ("Doctor" vs "Patient").</li>
+<br>
+<p>  <strong>SRD-4.5</strong>: The transcription request <strong>shall</strong> enable Speaker Diarization ("Doctor" vs "Patient").</p>
+<br>
+<h2 id="5.-soap-note-generation">5. SOAP Note Generation</h2>
+<br>
+<li>  <strong>SRD-5.1</strong>: The system <strong>shall</strong> use the Google Gemini 2.5 Flash model for generating clinical notes.</li>
+<li>  <strong>SRD-5.2</strong>: The AI prompt <strong>shall</strong> enforce a strict JSON output schema containing `subjective`, `objective`, `assessment`, and `plan`.</li>
+<li>  <strong>SRD-5.3</strong>: The system <strong>shall</strong> allow the Doctor to manually edit any section of the generated SOAP note.</li>
+<br>
+<h3>5.1 AI Data Pipeline</h3>
+<div class="mermaid">
+flowchart LR
+Audio -->|Upload| Backend
+Backend -->|Async Job| STT["AssemblyAI"]
+STT -->|Transcript| LLM["Gemini 2.5"]
+LLM -->|JSON| SOAP["Structured Note"]
+SOAP --> DB[(Database)]
+</div>
+<br>
+<p>  <strong>SRD-5.3</strong>: The system <strong>shall</strong> allow the Doctor to manually edit any section of the generated SOAP note.</p>
+<br>
+<h2 id="6.-triage--queue-management">6. Triage & Queue Management</h2>
+<br>
+<li>  <strong>SRD-6.1</strong>: The `TriageService` <strong>shall</strong> calculate a risk score (0-100) based on keyword checking.</li>
+<li>  <strong>SRD-6.2</strong>: The system <strong>shall</strong> categorize urgency as:</li>
+<li>  <strong>CRITICAL (≥95)</strong>: "Stroke", "Suicide".</li>
+<li>  <strong>HIGH (≥75)</strong>: "Fainting".</li>
+<li>  <strong>MODERATE (≥50)</strong>.</li>
+<li>  <strong>LOW (<50)</strong>.</li>
+<li>  <strong>SRD-6.3</strong>: Patients with `CRITICAL` status <strong>shall</strong> be displayed with a visual Red Badge indicator.</li>
+<br>
+<h3>6.1 Triage Logic</h3>
+<div class="mermaid">
+graph TD
+Start["New Transcript"] --> Check{Keywords?}
+Check -->|Stroke/Seizure| Critical["Score: 95 (CRITICAL)"]
+Check -->|Pain/Faint| High["Score: 75 (HIGH)"]
+Check -->|Fever| Mod["Score: 50 (MODERATE)"]
+Check -->|None| Low["Score: 20 (LOW)"]
+</div>
+<br>
+<p>  <strong>SRD-6.3</strong>: Patients with `CRITICAL` status <strong>shall</strong> be displayed with a visual Red Badge indicator.</p>
+<br>
+<h2 id="7.-ui/ux-component-specifications">7. UI/UX Component Specifications</h2>
+<br>
+<p>  <strong>SRD-6.3</strong>: Patients with `CRITICAL` status <strong>shall</strong> be displayed with a visual Red Badge indicator.</p>
+<br><tr><td>Component</td><td>State</td><td>Hex Color</td><td>Icon</td></tr>
+<tr><td>**Risk Badge**</td><td>Critical</td><td>`#EF4444` (Red-500)</td><td>⚠️ Alert Triangle</td></tr>
+<tr><td>**Risk Badge**</td><td>High</td><td>`#F59E0B` (Amber-500)</td><td>⚠️ Alert Triangle</td></tr>
+<tr><td>**Record Btn**</td><td>Active</td><td>`#EF4444` (Red-500)</td><td>⏹️ Square (Pulse)</td></tr>
+<tr><td>**Record Btn**</td><td>Idle</td><td>`#3B82F6` (Blue-500)</td><td>🎤 Mic</td></tr>
+<br>
+<p>  <strong>SRD-6.3</strong>: Patients with `CRITICAL` status <strong>shall</strong> be displayed with a visual Red Badge indicator.</p>
+<br>
+<h2 id="8.-security--compliance">8. Security & Compliance</h2>
+<br>
+<li>  <strong>SRD-8.1</strong>: API Authentication <strong>shall</strong> utilize stateless JSON Web Tokens (JWT).</li>
+<li>  <strong>SRD-8.2</strong>: Patient Health Information (PHI) <strong>shall</strong> be encrypted at rest in the database and file storage.</li>
+<li>  <strong>SRD-8.3</strong>: The system <strong>shall</strong> log detailed audit trails sufficient for HIPAA compliance reviews.</li>
+<br>
+<p>  <strong>SRD-8.3</strong>: The system <strong>shall</strong> log detailed audit trails sufficient for HIPAA compliance reviews.</p>
+<br>
+<h2 id="9.-performance-standards">9. Performance Standards</h2>
+<br>
+<li>  <strong>SRD-9.1</strong>: Login API < 500ms (95th percentile).</li>
+<li>  <strong>SRD-9.2</strong>: SOAP Note generation < 10 seconds under load.</li>
+<li>  <strong>SRD-9.3</strong>: Triage evaluation < 1 second.</li>
+<br>
+<p>  <strong>SRD-9.3</strong>: Triage evaluation < 1 second.</p>
+<br>
+<h2 id="10.-traceability-matrix">10. Traceability Matrix</h2>
+<br><tr><td>SRD ID</td><td>PRD Feature</td><td>Tech Component</td></tr>
+<tr><td>**SRD-4.4**</td><td>Transcription</td><td>`stt_service.py` (AssemblyAI)</td></tr>
+<tr><td>**SRD-5.1**</td><td>SOAP Gen</td><td>`llm_service.py` (Gemini)</td></tr>
+<tr><td>**SRD-6.1**</td><td>Triage Engine</td><td>`triage_service.py`</td></tr>
+<tr><td>**SRD-2.1.2**</td><td>Audio Upload</td><td>`/api/v1/consultations.py`</td></tr></tbody></table>
+<br>
+<p>  <strong>SRD-9.3</strong>: Triage evaluation < 1 second.</p>
+<br>
+<h2 id="11.-database-schema-(visual)">11. Database Schema (Visual)</h2>
+<div class="mermaid">
+erDiagram
+User ||--o{ PatientProfile : has
+User ||--o{ DoctorProfile : has
+Consultation ||--|| SOAPNote : generates
+Consultation ||--o{ AudioFile : contains
+Consultation {
+string status
+int urgency_score
+}
+</div>
+<br>
+
+    </div>
+</body>
+</html>

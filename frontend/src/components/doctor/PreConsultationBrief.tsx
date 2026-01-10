@@ -9,9 +9,10 @@ interface PreConsultationBriefProps {
     patient: any;
     intakeSummary?: string;
     intakeTranscript?: string;
+    appointmentReason?: string;
 }
 
-export function PreConsultationBrief({ patient, intakeSummary, intakeTranscript }: PreConsultationBriefProps) {
+export function PreConsultationBrief({ patient, intakeSummary, intakeTranscript, appointmentReason }: PreConsultationBriefProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     if (!patient) return null;
@@ -44,12 +45,16 @@ export function PreConsultationBrief({ patient, intakeSummary, intakeTranscript 
                 {/* Patient Context Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-1">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Age / Gender</p>
-                        <p className="text-lg font-semibold">{patient.age || 'N/A'}y / {patient.gender || 'N/A'}</p>
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Age / Gender</p>
+                        <p className="text-lg font-semibold">{patient.age || 'N/A'}y / {patient.gender || patient.gender_identity || 'N/A'}</p>
                     </div>
                     <div className="space-y-1 col-span-2">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Known Conditions</p>
-                        <p className="text-lg font-semibold truncate">{patient.medical_history || 'None reported'}</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest truncate">Reason for Visit</p>
+                        <p className="text-lg font-semibold truncate" title={appointmentReason || "Checks ups"}>{appointmentReason || 'Routine Checkup'}</p>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Medical History</p>
+                        <p className="text-lg font-semibold truncate" title={patient.medical_history}>{patient.medical_history || 'None'}</p>
                     </div>
                 </div>
 

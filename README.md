@@ -16,6 +16,10 @@ By integration with **Google Gemini 2.0 Flash** (Reasoning), we have built a sys
 *   ✅ **Clinical Triage Engine**: Auto-detects "Stroke", "Suicide Risk", or "Severe Pain" and flags urgency.
 *   ✅ **Identity-Redacted Privacy**: Filters names/phones but preserves "Seizure" and "Donepezil".
 *   ✅ **Doctor Console v2**: Full-Screen Dashboard with "Patient Queue", "Safety Alerts", and "One-Click Signing".
+*   ✅ **Diagnosis & Prescriptions**: Structured input fields for ICD-10 diagnosis and medication Rx.
+*   ✅ **Automated Billing**: Generates bill notifications upon consultation completion.
+*   ✅ **Enhanced Patient Profile**: Captures Demographics, Emergency Contacts, and Medical History.
+*   ✅ **Intake Review**: Displays "Reason for Visit" & Pre-Visit Audio Transcription.
 *   ✅ **Visual Progress Tracking**: Beautiful terminal-based progress bars for backend tasks.
 *   ✅ **Smart Resume Logic**: Automatically returns doctors to their last active step (Intake vs. Clinical Plan).
 *   ✅ **Mock AI Mode**: Developer-friendly simulation mode to bypass API rate limits during testing.
@@ -146,6 +150,8 @@ We migrated from a static Node.js shell to a robust **FastAPI + React** ecosyste
 ## 📊 Reports & Artifacts
 *   📄 **[Project Implementation Summary](docs/project_implementation_summary.md)**: A memoir of the entire migration.
 *   📄 **[STT Comparison Report](docs/stt_comparison_report.md)**: Proof of >96% accuracy.
+*   📄 **[Metrics Report](docs/metrics_report.md)**: Performance analysis of the AI pipelines.
+*   📄 **[Implementation Plan](docs/implementation_plan.md)**: Roadmap for recent MVP feature integration.
 
 ---
 

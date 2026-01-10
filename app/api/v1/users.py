@@ -20,6 +20,11 @@ class PatientProfileUpdate(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     zip_code: Optional[str] = None
+    age: Optional[int] = None
+    gender_identity: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    current_medications: Optional[str] = None
     medical_history: Optional[str] = None
 
 @router.put("/me/profile", response_model=PatientProfile)
