@@ -1,5 +1,6 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, AlertTriangle } from "lucide-react";
+import { AlertCircle, AlertTriangle, ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SafetyWarning {
     type: "CONTRAINDICATION" | "CAUTION";
@@ -16,31 +17,49 @@ export function SafetyAlerts({ warnings }: SafetyAlertsProps) {
     if (!warnings || warnings.length === 0) return null;
 
     return (
-        <div className="space-y-3 mb-4 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="space-y-4 mb-4 animate-in fade-in zoom-in duration-500">
             {warnings.map((w, i) => (
                 <Alert
                     key={i}
-                    variant={w.type === "CONTRAINDICATION" ? "destructive" : "default"}
-                    className={w.type === "CONTRAINDICATION" ? "border-red-600 bg-red-50" : "border-yellow-500 bg-yellow-50"}
-                >
-                    {w.type === "CONTRAINDICATION" ? (
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                    ) : (
-                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                    className={cn(
+                        "relative overflow-hidden border-none shadow-lg transition-all hover:scale-[1.01]",
+                        w.type === "CONTRAINDICATION"
+                            ? "bg-gradient-to-br from-red-50 to-white text-red-900 ring-1 ring-red-200"
+                            : "bg-gradient-to-br from-amber-50 to-white text-amber-900 ring-1 ring-amber-200"
                     )}
-                    <AlertTitle className={w.type === "CONTRAINDICATION" ? "text-red-800" : "text-yellow-800"}>
-                        {w.type === "CONTRAINDICATION" ? "Safety Alert (Critical)" : "Clinical Caution"}
+                >
+                    <div className={cn(
+                        "absolute top-0 left-0 w-1 h-full",
+                        w.type === "CONTRAINDICATION" ? "bg-red-500" : "bg-amber-500"
+                    )} />
+
+                    {w.type === "CONTRAINDICATION" ? (
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                    ) : (
+                        <AlertTriangle className="h-5 w-5 text-amber-600" />
+                    )}
+
+                    <AlertTitle className={cn(
+                        "text-sm font-black uppercase tracking-widest mb-1",
+                        w.type === "CONTRAINDICATION" ? "text-red-800" : "text-amber-800"
+                    )}>
+                        {w.type === "CONTRAINDICATION" ? "Critical Contraindication" : "Safety Caution"}
                     </AlertTitle>
-                    <AlertDescription className={w.type === "CONTRAINDICATION" ? "text-red-700" : "text-yellow-700"}>
+
+                    <AlertDescription className="text-sm font-medium leading-relaxed">
                         {w.message}
                         {w.drug && (
                             <a
                                 href={`https://www.drugs.com/search.php?searchterm=${w.drug}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="block mt-1 font-semibold underline text-xs hover:text-opacity-80"
+                                className={cn(
+                                    "flex items-center gap-1.5 mt-2 font-bold underline text-xs transition-opacity hover:opacity-70",
+                                    w.type === "CONTRAINDICATION" ? "text-red-700" : "text-amber-700"
+                                )}
                             >
-                                Verify {w.drug} on Drugs.com &rarr;
+                                <ExternalLink className="h-3 w-3" />
+                                Verify {w.drug} on Drugs.com
                             </a>
                         )}
                     </AlertDescription>

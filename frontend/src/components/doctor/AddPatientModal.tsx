@@ -46,8 +46,8 @@ export function AddPatientModal({ isOpen, onClose, onSuccess, doctorId }: AddPat
             toast.success("Patient record created.");
         } catch (e: any) {
             console.error(e);
-            if (e.response?.data?.detail === "User already exists") {
-                toast.error("User email already exists. Search features coming next.");
+            if (e.message && e.message.includes("User already exists")) {
+                toast.error("User email already exists.");
             } else {
                 toast.error("Failed to create patient.");
             }
@@ -64,8 +64,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess, doctorId }: AddPat
             const apptRes = await api.post("/appointments", {
                 patient_id: newUserId,
                 doctor_id: doctorId,
-                doctor_name: "Dr. Alexander", // Could fetch from context
-                scheduled_at: new Date(Date.now() + 5 * 60000).toISOString(), // Schedule 5 mins in future to pass backend validation
+                scheduled_at: new Date().toISOString(), // Now
                 reason: reason,
                 notes: "Walk-in / Quick Add"
             });
@@ -73,10 +72,6 @@ export function AddPatientModal({ isOpen, onClose, onSuccess, doctorId }: AddPat
             const apptId = apptRes.data.id;
 
             // 3. Create Consultation (To put in Queue)
-            // Note: Our QueueList endpoint fetches CONSULTATIONS that are COMPLETED (or Check logic).
-            // Actually, wait, QueueList typically shows IN_PROGRESS or SCHEDULED?
-            // Checking dashboard.py: It shows consultations with status COMPLETED?? That seemed wrong in my audit.
-            // Let's assume creating the consultation puts them in the flow.
             await api.post("/consultations", {
                 appointment_id: apptId,
                 notes: reason
@@ -85,10 +80,9 @@ export function AddPatientModal({ isOpen, onClose, onSuccess, doctorId }: AddPat
             toast.success("Patient added to queue!");
             onSuccess();
             onClose();
-        } catch (e: any) {
+        } catch (e) {
             console.error(e);
-            const msg = e.response?.data?.detail || "Failed to schedule.";
-            toast.error(msg);
+            toast.error("Failed to schedule.");
         } finally {
             setIsLoading(false);
         }

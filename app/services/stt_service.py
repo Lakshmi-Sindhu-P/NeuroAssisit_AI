@@ -5,20 +5,21 @@ from app.core.config import settings
 # Configure global API key
 aai.settings.api_key = settings.ASSEMBLYAI_API_KEY
 
+
 class AssemblyAIService:
     @staticmethod
     async def transcribe_audio_async(file_path: str, redact_pii: bool = True) -> dict:
         """
-        Asynchronously transcibes audio using AssemblyAI with polling.
-        Enables Speaker Diarization and PII Redaction (optional).
+        Asynchronously transcribes audio using AssemblyAI (correct SDK usage).
+        Supports diarization, PII redaction, medical vocabulary boosting.
         """
+
         transcriber = aai.Transcriber()
-        
-        # Configure for Medical domain requirements
+
         config = aai.TranscriptionConfig(
-            speaker_labels=True,  # Speaker Diarization
-            speakers_expected=2,  # Hint for Doctor + Patient
-            redact_pii=redact_pii,      # PII Redaction (Toggleable)
+            speaker_labels=True,
+            speakers_expected=2,
+            redact_pii=redact_pii,
             redact_pii_policies=[
                 aai.PIIRedactionPolicy.person_name,
                 aai.PIIRedactionPolicy.phone_number,
@@ -26,13 +27,12 @@ class AssemblyAIService:
             language_code="en_us",
             punctuate=True,
             format_text=True,
-            # Word Boost for Neurology (Accent Adaptation)
             word_boost=[
-                "Levetiracetam", 
-                "Donepezil", 
-                "Carbamazepine", 
-                "Sumatriptan", 
-                "Topiramate", 
+                "Levetiracetam",
+                "Donepezil",
+                "Carbamazepine",
+                "Sumatriptan",
+                "Topiramate",
                 "Valproate",
                 "Gabapentin",
                 "Memantine"
@@ -40,19 +40,18 @@ class AssemblyAIService:
             boost_param="high"
         )
 
-        # 1. Transcribe (Blocking call offloaded to thread)
-        # transcriber.transcribe() handles polling internally.
         loop = asyncio.get_event_loop()
         transcript = await loop.run_in_executor(
             None,
             lambda: transcriber.transcribe(file_path, config=config)
         )
-            
+
         if transcript.status == aai.TranscriptStatus.error:
-            raise Exception(f"Transcription failed: {transcript.error}")
-            
+            raise Exception(transcript.error)
+
         return {
             "text": transcript.text,
+            "transcript": transcript.text,  # frontend compatibility
             "utterances": [
                 {
                     "speaker": u.speaker,

@@ -3,13 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Activity, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { z } from "zod";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
@@ -17,26 +10,23 @@ import { useAuth, UserRole } from "@/contexts/AuthContext";
 const loginSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
-  role: z.enum(["patient", "front-desk", "doctor"], { required_error: "Please select your role" }),
 });
 
 type FormData = {
   email: string;
   password: string;
-  role: string;
 };
 
 type FormErrors = Partial<Record<keyof FormData, string>>;
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
-    role: "patient",
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -47,14 +37,29 @@ const Login = () => {
     }
   };
 
-  // Extract first name from email (before @) as a fallback
-  const extractNameFromEmail = (email: string): string => {
-    const localPart = email.split("@")[0];
-    // Capitalize first letter and replace dots/underscores with spaces
-    const name = localPart
-      .replace(/[._]/g, " ")
-      .split(" ")[0];
-    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  // Redirect based on role from database
+  // Backend returns roles like "PATIENT", "DOCTOR", "FRONT_DESK", "MASTER_ADMIN"
+  const redirectByRole = (role: string) => {
+    // Normalize role: uppercase and underscore format
+    const normalizedRole = (role || "").toUpperCase().replace("-", "_");
+
+    console.log("Redirecting for role:", role, "-> normalized:", normalizedRole);
+
+    switch (normalizedRole) {
+      case "MASTER_ADMIN":
+        navigate("/admin/master");
+        break;
+      case "FRONT_DESK":
+        navigate("/admin/dashboard");
+        break;
+      case "DOCTOR":
+        navigate("/doctor/dashboard");
+        break;
+      case "PATIENT":
+      default:
+        navigate("/dashboard");
+        break;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,19 +81,23 @@ const Login = () => {
     try {
       await login(formData.email, formData.password);
 
-      // We get the user role from AuthContext after login
-      // but we can also use formData.role if we assume it matches
-      const role = formData.role as UserRole;
+      // After login, get role from backend to determine correct dashboard
+      const { apiRequest } = await import("@/lib/api");
+      const userData = await apiRequest("/auth/me");
 
-      if (role === "front-desk") {
-        navigate("/admin/dashboard");
-      } else if (role === "doctor") {
-        navigate("/doctor/dashboard");
-      } else {
-        navigate("/dashboard");
-      }
+      // Role comes from backend as "PATIENT", "DOCTOR", or "FRONT_DESK"
+      const role = userData.role || "PATIENT";
+
+      redirectByRole(role);
     } catch (error: any) {
-      setErrors({ email: error.message || "Invalid credentials" });
+      // Check for ACCOUNT_INACTIVE error from backend
+      if (error.message && error.message.includes("ACCOUNT_INACTIVE")) {
+        setErrors({ email: "Your account has been deactivated. Please contact the administrator." });
+      } else if (error.message && error.message.includes("deactivated")) {
+        setErrors({ email: "Your account has been deactivated. Please contact the administrator." });
+      } else {
+        setErrors({ email: error.message || "Invalid credentials" });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -208,23 +217,6 @@ const Login = () => {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role">Login as</Label>
-              <Select value={formData.role} onValueChange={(value) => updateField("role", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border border-border z-50">
-                  <SelectItem value="patient">Patient</SelectItem>
-                  <SelectItem value="front-desk">Front Desk Staff</SelectItem>
-                  <SelectItem value="doctor">Doctor</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.role && (
-                <p className="text-sm text-destructive">{errors.role}</p>
-              )}
-            </div>
-
             <Button
               type="submit"
               className="w-full py-6 text-base font-semibold"
@@ -269,3 +261,4 @@ const Login = () => {
 };
 
 export default Login;
+

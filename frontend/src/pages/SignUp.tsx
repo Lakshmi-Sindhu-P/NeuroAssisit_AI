@@ -22,17 +22,21 @@ const signUpSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string(),
-  role: z.enum(["patient", "front-desk", "doctor"], { required_error: "Please select your role" }),
-  age: z.string().refine((val) => {
-    const num = parseInt(val);
-    return num >= 1 && num <= 120;
-  }, "Please enter a valid age"),
-  gender: z.string().min(1, "Please select your gender"),
+  // Age and gender are required for patient accounts
+  age: z.string().min(1, "Age is required"),
+  gender: z.string().min(1, "Gender is required"),
   phone: z.string().refine((val) => validateIndianPhone(val), "Please enter a valid 10-digit Indian mobile number"),
   terms: z.boolean().refine((val) => val === true, "You must accept the terms and privacy policy"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
+}).refine((data) => {
+  // Age validation
+  const num = parseInt(data.age);
+  return num >= 1 && num <= 120;
+}, {
+  message: "Please enter a valid age (1-120)",
+  path: ["age"],
 });
 
 type FormData = {
@@ -40,7 +44,6 @@ type FormData = {
   email: string;
   password: string;
   confirmPassword: string;
-  role: string;
   age: string;
   gender: string;
   phone: string;
@@ -59,7 +62,6 @@ const SignUp = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "",
     age: "",
     gender: "",
     phone: "",
@@ -67,6 +69,8 @@ const SignUp = () => {
   });
   const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
   const [errors, setErrors] = useState<FormErrors>({});
+  // Track which steps have been submitted (attempted) to show errors only after attempt
+  const [stepSubmitted, setStepSubmitted] = useState<Record<number, boolean>>({ 1: false, 2: false, 3: false });
   const { toast } = useToast();
 
   const updateField = (field: keyof FormData, value: string | boolean) => {
@@ -86,8 +90,6 @@ const SignUp = () => {
 
       if (!formData.email.trim()) newErrors.email = "Email is required";
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Please enter a valid email";
-
-      if (!formData.role) newErrors.role = "Please select your role";
     }
 
     if (currentStep === 2) {
@@ -99,6 +101,7 @@ const SignUp = () => {
     }
 
     if (currentStep === 3) {
+      // Age and gender always required for patient signup
       if (!formData.age) newErrors.age = "Age is required";
       else {
         const ageNum = parseInt(formData.age);
@@ -120,22 +123,14 @@ const SignUp = () => {
   };
 
   const handleNext = () => {
+    // Mark this step as submitted (attempted)
+    setStepSubmitted(prev => ({ ...prev, [step]: true }));
+
     if (validateStep(step)) {
       // Only proceed to next step if validation passes
       setStep(step + 1);
-    } else {
-      // Mark current step fields as touched to show validation errors
-      const stepFields: Record<number, (keyof FormData)[]> = {
-        1: ["fullName", "email", "role"],
-        2: ["password", "confirmPassword"],
-        3: ["age", "gender", "phone", "terms"]
-      };
-
-      const fieldsToTouch = stepFields[step] || [];
-      const newTouched = { ...touched };
-      fieldsToTouch.forEach(f => newTouched[f] = true);
-      setTouched(newTouched);
     }
+    // Errors will now show because stepSubmitted[step] is true
   };
 
   const handleBack = () => {
@@ -148,15 +143,10 @@ const SignUp = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Mark step 3 as submitted
+    setStepSubmitted(prev => ({ ...prev, 3: true }));
+
     if (!validateStep(3)) {
-      // Mark all step 3 fields as touched to show errors
-      setTouched({
-        ...touched,
-        age: true,
-        gender: true,
-        phone: true,
-        terms: true
-      });
       return;
     }
 
@@ -287,9 +277,9 @@ const SignUp = () => {
                     placeholder="John Doe"
                     value={formData.fullName}
                     onChange={(e) => updateField("fullName", e.target.value)}
-                    className={errors.fullName ? "border-destructive" : ""}
+                    className={stepSubmitted[1] && errors.fullName ? "border-destructive" : ""}
                   />
-                  {touched.fullName && errors.fullName && (
+                  {stepSubmitted[1] && errors.fullName && (
                     <p className="text-sm text-destructive">{errors.fullName}</p>
                   )}
                 </div>
@@ -302,27 +292,10 @@ const SignUp = () => {
                     placeholder="john@example.com"
                     value={formData.email}
                     onChange={(e) => updateField("email", e.target.value)}
-                    className={errors.email ? "border-destructive" : ""}
+                    className={stepSubmitted[1] && errors.email ? "border-destructive" : ""}
                   />
-                  {touched.email && errors.email && (
+                  {stepSubmitted[1] && errors.email && (
                     <p className="text-sm text-destructive">{errors.email}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="role">I am a</Label>
-                  <Select value={formData.role} onValueChange={(value) => updateField("role", value)}>
-                    <SelectTrigger className={errors.role ? "border-destructive" : ""}>
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border border-border z-50">
-                      <SelectItem value="patient">Patient</SelectItem>
-                      <SelectItem value="front-desk">Front Desk Staff</SelectItem>
-                      <SelectItem value="doctor">Doctor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {touched.role && errors.role && (
-                    <p className="text-sm text-destructive">{errors.role}</p>
                   )}
                 </div>
               </div>
@@ -340,7 +313,7 @@ const SignUp = () => {
                       placeholder="At least 8 characters"
                       value={formData.password}
                       onChange={(e) => updateField("password", e.target.value)}
-                      className={errors.password ? "border-destructive pr-10" : "pr-10"}
+                      className={stepSubmitted[2] && errors.password ? "border-destructive pr-10" : "pr-10"}
                     />
                     <button
                       type="button"
@@ -350,7 +323,7 @@ const SignUp = () => {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  {touched.password && errors.password && (
+                  {stepSubmitted[2] && errors.password && (
                     <p className="text-sm text-destructive">{errors.password}</p>
                   )}
                   <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
@@ -365,7 +338,7 @@ const SignUp = () => {
                       placeholder="Re-enter your password"
                       value={formData.confirmPassword}
                       onChange={(e) => updateField("confirmPassword", e.target.value)}
-                      className={errors.confirmPassword ? "border-destructive pr-10" : "pr-10"}
+                      className={stepSubmitted[2] && errors.confirmPassword ? "border-destructive pr-10" : "pr-10"}
                     />
                     <button
                       type="button"
@@ -375,7 +348,7 @@ const SignUp = () => {
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  {touched.confirmPassword && errors.confirmPassword && (
+                  {stepSubmitted[2] && errors.confirmPassword && (
                     <p className="text-sm text-destructive">{errors.confirmPassword}</p>
                   )}
                 </div>
@@ -385,42 +358,45 @@ const SignUp = () => {
             {/* Step 3: Details */}
             {step === 3 && (
               <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      placeholder="25"
-                      min="1"
-                      max="120"
-                      value={formData.age}
-                      onChange={(e) => updateField("age", e.target.value)}
-                      className={errors.age ? "border-destructive" : ""}
-                    />
-                    {touched.age && errors.age && (
-                      <p className="text-sm text-destructive">{errors.age}</p>
-                    )}
-                  </div>
+                {/* Age and Gender - only shown for patient/doctor, NOT for front-desk */}
+                {formData.role !== "front-desk" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="age">Age</Label>
+                      <Input
+                        id="age"
+                        type="number"
+                        placeholder="25"
+                        min="1"
+                        max="120"
+                        value={formData.age}
+                        onChange={(e) => updateField("age", e.target.value)}
+                        className={stepSubmitted[3] && errors.age ? "border-destructive" : ""}
+                      />
+                      {stepSubmitted[3] && errors.age && (
+                        <p className="text-sm text-destructive">{errors.age}</p>
+                      )}
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="gender">Gender</Label>
-                    <Select value={formData.gender} onValueChange={(value) => updateField("gender", value)}>
-                      <SelectTrigger className={errors.gender ? "border-destructive" : ""}>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border border-border z-50">
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                        <SelectItem value="prefer-not">Prefer not to say</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {touched.gender && errors.gender && (
-                      <p className="text-sm text-destructive">{errors.gender}</p>
-                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select value={formData.gender} onValueChange={(value) => updateField("gender", value)}>
+                        <SelectTrigger className={stepSubmitted[3] && errors.gender ? "border-destructive" : ""}>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border border-border z-50">
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="prefer-not">Prefer not to say</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {stepSubmitted[3] && errors.gender && (
+                        <p className="text-sm text-destructive">{errors.gender}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
@@ -428,9 +404,9 @@ const SignUp = () => {
                     id="phone"
                     value={formData.phone}
                     onChange={(value) => updateField("phone", value)}
-                    error={!!errors.phone}
+                    error={stepSubmitted[3] && !!errors.phone}
                   />
-                  {touched.phone && errors.phone && (
+                  {stepSubmitted[3] && errors.phone && (
                     <p className="text-sm text-destructive">{errors.phone}</p>
                   )}
                 </div>
@@ -441,7 +417,7 @@ const SignUp = () => {
                       id="terms"
                       checked={formData.terms}
                       onCheckedChange={(checked) => updateField("terms", checked as boolean)}
-                      className={errors.terms ? "border-destructive" : ""}
+                      className={stepSubmitted[3] && errors.terms ? "border-destructive" : ""}
                     />
                     <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
                       I agree to the{" "}
@@ -450,7 +426,7 @@ const SignUp = () => {
                       <a href="#" className="text-primary hover:underline">Privacy Policy</a>
                     </Label>
                   </div>
-                  {touched.terms && errors.terms && (
+                  {stepSubmitted[3] && errors.terms && (
                     <p className="text-sm text-destructive">{errors.terms}</p>
                   )}
                 </div>

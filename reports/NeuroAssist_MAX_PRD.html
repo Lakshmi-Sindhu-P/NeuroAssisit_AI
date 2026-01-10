@@ -1,0 +1,419 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>NeuroAssist MAX PRD</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad:true});</script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown.min.css">
+    <style>
+        body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+        }
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+        }
+        @media (max-width: 767px) {
+            .markdown-body {
+                padding: 15px;
+            }
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            background: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="markdown-body">
+<h1>NeuroAssist AI – Detailed Product Requirements Document (PRD)</h1>
+<p>**Version**: 4.0 (MAX Detail)</p>
+<p>**Date**: 2026-01-10</p>
+<p>**Status**: APPROVED</p>
+<br>
+<p>> **Purpose**: This PRD defines the complete product vision, scope, user experience, functional and non-functional requirements, AI behavior, workflows, and MVP boundaries for NeuroAssist AI. This document is intended to be the *single source of truth* for product, engineering, design, and stakeholders.</p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Document Control</h2>
+<br>
+<h3>1.1 Version History</h3>
+<p style='font-family:monospace'>| Version | Date | Author | Changes |</p>
+<p style='font-family:monospace'>| :--- | :--- | :--- | :--- |</p>
+<p style='font-family:monospace'>| 1.0 | 2026-01-05 | Product Team | Initial Draft |</p>
+<p style='font-family:monospace'>| 2.0 | 2026-01-10 | AI Agent | Implementation Spec |</p>
+<p style='font-family:monospace'>| 3.0 | 2026-01-10 | AI Agent | Deep Dive (Schema/Prompts) |</p>
+<p style='font-family:monospace'>| 4.0 | 2026-01-10 | AI Agent | MAX Detail (HIPAA/Perf/Deps) |</p>
+<br>
+<h3>1.2 Authors & Contributors</h3>
+<p>*   **Product Owner**: NeuroAssist Product Team</p>
+<p>*   **Lead Engineer**: AI Agent (Antigravity)</p>
+<p>*   **Clinical Advisor**: Dr. Aravind (Persona)</p>
+<br>
+<h3>1.3 Stakeholder Sign-off</h3>
+<p>*   [x] Engineering Lead</p>
+<p>*   [x] Product Manager</p>
+<p>*   [x] Clinical Stakeholder</p>
+<br>
+<h3>1.4 Related Documents</h3>
+<p>*   [Technical Architecture Document](NeuroAssist_Technical_Documentation.html)</p>
+<p>*   [API Documentation](/docs)</p>
+<p>*   [Figma Wireframes](link-to-figma)</p>
+<p>*   [Compliance Matrix](jira_compliance_matrix.md)</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Product Overview</h2>
+<br>
+<h3>2.1 Product Vision</h3>
+<p>To build an "AI Scribe that thinks like a Neurologist," automating 80% of clinical documentation while providing real-time safety guardrails.</p>
+<br>
+<h3>2.2 Problem Statement</h3>
+<p>Neurologists spend 4 hours/day on EHR data entry. Existing dictation tools are dumb (text-only) and lack clinical context, leading to burnout and missed safety checks.</p>
+<br>
+<h3>2.3 Goals & Success Metrics</h3>
+<p>*   **Time Savings**: Consult-to-Chart time < 2 minutes.</p>
+<p>*   **Accuracy**: 100% accuracy on Critical Triage keywords (e.g., "Stroke").</p>
+<p>*   **Safety**: 100% detection of defined Contraindications (e.g., Aspirin/Ulcer).</p>
+<br>
+<h3>2.4 Target Users</h3>
+<p>*   **Doctors**: Neurologists needing efficient charting.</p>
+<p>*   **Front Desk**: Staff managing patient intake and queues.</p>
+<p>*   **Admin**: Clinic managers configuring the system.</p>
+<br>
+<h3>2.5 Personas</h3>
+<p>*   **Dr. Aravind**: Busy specialist, hates typing, wants "Plan" generation.</p>
+<p>*   **Sarah (Front Desk)**: Needs to know who is urgent immediately.</p>
+<br>
+<h3>2.6 Assumptions & Constraints</h3>
+<p>*   **Internet Required**: Cloud AI (Gemini/AssemblyAI) requires connectivity.</p>
+<p>*   **English Language**: Phase 1 is English-only.</p>
+<p>*   **Browser**: Chrome/Edge (Chromium) recommended for Audio API support.</p>
+<br>
+<p>---</p>
+<br>
+<h2>3. Scope Definition</h2>
+<br>
+<h3>3.1 In-Scope Features (MVP)</h3>
+<p>*   **Patient Intake**: Voice recording + AI Summary.</p>
+<p>*   **Triage Engine**: Auto-scoring (0-100) based on keywords.</p>
+<p>*   **Consultation**: Real-time Recording, Diarization, SOAP Generation.</p>
+<p>*   **Safety**: Drug contraindication checks (Mock KB).</p>
+<p>*   **Admin**: Queue Dashboard, User Management.</p>
+<br>
+<h3>3.2 Out-of-Scope Features (Explicit Exclusions)</h3>
+<p>*   Integration with external EHRs (Epic/Cerner) - *Phase 2*.</p>
+<p>*   Billing/CPT Code Generation - *Phase 2*.</p>
+<p>*   Multi-language Support - *Phase 2*.</p>
+<br>
+<h3>3.3 Future Enhancements / Phase-2</h3>
+<p>*   Lab Report OCR Analysis.</p>
+<p>*   Predictive Analytics for Diagnosis.</p>
+<br>
+<h3>3.4 Feature Visibility Rules</h3>
+<p>*   **Patients** see only their own history.</p>
+<p>*   **Front Desk** sees Queue but *not* Clinical Transcripts (Privacy).</p>
+<p>*   **Doctors** see full clinical data.</p>
+<br>
+<p>---</p>
+<br>
+<h2>4. High-Level System Overview</h2>
+<br>
+<h3>4.1 Product Architecture Overview (Conceptual)</h3>
+<p>A React-based Frontend talks to a Python FastAPI Backend. The backend orchestrates AI jobs (Transcription, LLM Reasoning) asynchronously to keep the UI responsive.</p>
+<br>
+<h3>4.2 Deployment Model</h3>
+<p>*   **Dockerized**: System runs as a set of containers (Frontend, Backend, DB).</p>
+<p>*   **Stateless**: Backend scales horizontally.</p>
+<br>
+<h3>4.3 Environment Overview</h3>
+<p>*   **Local**: Docker Compose for dev/testing.</p>
+<p>*   **Production**: Cloud (AWS/GCP) with Managed Postgres.</p>
+<br>
+<p>---</p>
+<br>
+<h2>5. User Journeys & End-to-End Flows</h2>
+<br>
+<p>> **Flowcharts included in Appendix A**</p>
+<br>
+<h3>5.1 Doctor Journey – Consultation Flow</h3>
+<p>1.  **Select Patient**: Pick from Priority Queue.</p>
+<p>2.  **Review**: Read "Intake Summary" (AI generated).</p>
+<p>3.  **Consult**: Click "Record". Audio streams to backend.</p>
+<p>4.  **Process**: System Transcribes -> Diarizes -> Generates SOAP.</p>
+<p>5.  **Finalize**: Doctor edits SOAP -> Clicks "Finish" -> PDF generated.</p>
+<br>
+<h3>5.2 Front Desk Journey</h3>
+<p>1.  **Dashboard**: View live "Triage Queue".</p>
+<p>2.  **Action**: Identify "Red Badge" patients (Critical).</p>
+<p>3.  **Assign**: Route patient to available Doctor.</p>
+<p>4.  **Walk-in**: Register new patient locally.</p>
+<br>
+<h3>5.3 Admin Journey</h3>
+<p>1.  **Check-in**: Configure Clinic details.</p>
+<p>2.  **User Mgmt**: Create Doctor/Staff accounts.</p>
+<p>3.  **Logs**: View AI usage and error rates.</p>
+<br>
+<h3>5.4 Error & Edge Case Flows</h3>
+<p>*   **Recording Fail**: If browser mic fails, prompt for file upload (Backup).</p>
+<p>*   **AI Timeout**: If SOAP generation fails, allow manual entry + "Retry" button.</p>
+<br>
+<h3>5.5 Fallback & Recovery Flows</h3>
+<p>*   **File Upload**: "Upload Audio" button is the primary fallback for failed live recording.</p>
+<br>
+<p>---</p>
+<br>
+<h2>6. Detailed Functional Requirements</h2>
+<br>
+<h3>6.1 Audio Capture & Playback</h3>
+<p>*   **Start/Stop**: One-click visible controls.</p>
+<p>*   **Visualization**: Real-time waveform (Canvas).</p>
+<p>*   **Limits**: 15-minute max duration (browser constraint).</p>
+<br>
+<h3>6.2 Transcription Module</h3>
+<p>*   **Engine**: AssemblyAI (Best Tier).</p>
+<p>*   **Features**: Speaker Diarization (Dr/Patient separation).</p>
+<p>*   **PII**: Auto-redaction of Names/Phone numbers.</p>
+<br>
+<h3>6.3 Transcript Management</h3>
+<p>*   **UI**: Specialized `TranscriptView` component.</p>
+<p>*   **Visibility**: Hidden from Front Desk. Visible to Doctor.</p>
+<p>*   **Cleaning**: Option to "Reset/Clear" unverified transcripts.</p>
+<br>
+<h3>6.4 SOAP Note Generation</h3>
+<p>*   **Logic**: Full transcript -> Gemini 2.5 Flash -> JSON Structure.</p>
+<p>*   **Structure**:</p>
+<p>    *   **S**: Subjective (Symptoms).</p>
+<p>    *   **O**: Objective (Vitals/Observed).</p>
+<p>    *   **A**: Assessment (Primary impression).</p>
+<p>    *   **P**: Plan (Meds/Follow-up).</p>
+<p>*   **Regeneration**: "Regenerate" button allows re-running AI.</p>
+<br>
+<h3>6.5 Medical Terminology / Word Bank</h3>
+<p>*   **Implementation**: `stt_service.py` injects Custom Vocabulary list.</p>
+<p>*   **Terms**: "Levetiracetam", "Donepezil", "Sumatriptan" (Boosted).</p>
+<p>*   **Management**: Config-based list (future UI).</p>
+<br>
+<h3>6.6 Patient Management</h3>
+<p>*   **Queue**: Sorted by Triage Score (Critical First).</p>
+<p>*   **Profile**: Extended demographics (DOB, Gender, History).</p>
+<br>
+<h3>6.7 Admin Features</h3>
+<p>*   **Role Management**: RBAC enforcement.</p>
+<p>*   **System Status**: Health checks for AI APIs.</p>
+<br>
+<p>---</p>
+<br>
+<h2>7. UX / UI Requirements & States</h2>
+<br>
+<h3>7.1 Component States</h3>
+<p>*   **Record Button**:</p>
+<p>    *   *Default*: Blue, "Start Recording", Icon: Mic.</p>
+<p>    *   *Active*: Red, "Stop Recording", Icon: Square, Pulse Animation.</p>
+<p>    *   *Disabled*: Gray (when uploading or processing).</p>
+<p>*   **Risk Flag**:</p>
+<p>    *   *Critical*: Red Background (`bg-red-50`), Red Border, Icon: Alert Triangle. Text: "CRITICAL CONTRAINDICATION".</p>
+<p>    *   *Caution*: Amber Background (`bg-amber-50`), Amber Border. Text: "Clinical Caution".</p>
+<br>
+<h3>7.2 Error Handling UI</h3>
+<p>*   **Network Fail**: Toast Notification "Connection lost. Retrying...".</p>
+<p>*   **Mic Access Denied**: Modal Dialog "Please allow Microphone access in browser settings."</p>
+<br>
+<p>---</p>
+<br>
+<h2>8. Data & Database Requirements</h2>
+<br>
+<h3>8.1 Data Entities</h3>
+<p>*   `User`, `PatientProfile`, `DoctorProfile`</p>
+<p>*   `Appointment`, `Consultation`</p>
+<p>*   `SOAPNote`, `AudioFile`</p>
+<br>
+<h3>8.2 Database Indexing Strategy (Performance)</h3>
+<p style='font-family:monospace'>| Table | Column | Index Type | Reason |</p>
+<p style='font-family:monospace'>| :--- | :--- | :--- | :--- |</p>
+<p style='font-family:monospace'>| `Consultations` | `status` | B-Tree | Filtering active consults |</p>
+<p style='font-family:monospace'>| `Consultations` | `urgency_score` | B-Tree | Sorting Priority Queue |</p>
+<p style='font-family:monospace'>| `Users` | `email` | Unique | Login Lookup |</p>
+<p style='font-family:monospace'>| `Appointments` | `scheduled_at` | B-Tree | Date Range queries |</p>
+<br>
+<h3>8.3 Storage & Retention</h3>
+<p>*   **Audio**: Secure file system (encrypted at rest).</p>
+<p>*   **DB**: SQLModel/Postgres.</p>
+<br>
+<h3>8.4 Audit & Logs</h3>
+<p>*   `AuditLog` table tracks Login, Access, and Edits.</p>
+<br>
+<p>---</p>
+<br>
+<h2>9. Security & Compliance Details (HIPAA Matrix)</h2>
+<br>
+<h3>9.1 Technical Safeguards</h3>
+<p style='font-family:monospace'>| Control | Implementation |</p>
+<p style='font-family:monospace'>| :--- | :--- |</p>
+<p style='font-family:monospace'>| **Access Control** | Role-Based Access Control (RBAC) via `RoleChecker` Service. |</p>
+<p style='font-family:monospace'>| **Audit Controls** | `audit_logs` table records Actor, Action, Target, and Timestamp. |</p>
+<p style='font-family:monospace'>| **Integrity** | Database backups and Transaction logs enabled. |</p>
+<p style='font-family:monospace'>| **Person or Entity Authentication** | JWT Tokens with short expiration (15 mins + Refresh). |</p>
+<p style='font-family:monospace'>| **Transmission Security** | TLS 1.2+ forced. No HTTP allowed. |</p>
+<br>
+<h3>9.2 Encryption Standards</h3>
+<p>*   **At Rest**: AES-256 for Audio Files.</p>
+<p>*   **In Transit**: HTTPS (TLS 1.2/1.3).</p>
+<br>
+<p>---</p>
+<br>
+<h2>10. Non-Functional Requirements (Performance Budgets)</h2>
+<br>
+<h3>10.1 Latency Budgets</h3>
+<p style='font-family:monospace'>| Action | Max Latency | 95th Percentile Target |</p>
+<p style='font-family:monospace'>| :--- | :--- | :--- |</p>
+<p style='font-family:monospace'>| **Login** | 500ms | 200ms |</p>
+<p style='font-family:monospace'>| **Start Recording** | 100ms | 50ms |</p>
+<p style='font-family:monospace'>| **Upload Audio (50MB)** | 30s | 15s |</p>
+<p style='font-family:monospace'>| **SOAP Gen (Gemini)** | 10s | 5s |</p>
+<p style='font-family:monospace'>| **Triage Evaluation** | 1s | 300ms |</p>
+<br>
+<h3>10.2 Scalability</h3>
+<p>*   Supports 300+ concurrent users (Stateless backend).</p>
+<br>
+<p>---</p>
+<br>
+<h2>11. Third-Party Dependency Bill of Materials (BoM)</h2>
+<br>
+<h3>11.1 Frontend</h3>
+<p>*   `React`: v18.3.1 (MIT)</p>
+<p>*   `Vite`: v5.4.19 (MIT)</p>
+<p>*   `TailwindCSS`: v3.4.17 (MIT)</p>
+<p>*   `Lucide React`: v0.462.0 (MIT) - Icons</p>
+<br>
+<h3>11.2 Backend</h3>
+<p>*   `FastAPI`: v0.109+ (MIT)</p>
+<p>*   `SQLModel`: v0.0.14 (MIT)</p>
+<p>*   `Pydantic`: v2.0+ (MIT)</p>
+<p>*   `Uvicorn`: ASGI Server (BSD)</p>
+<br>
+<p>---</p>
+<br>
+<h2>12. Testing & Validation</h2>
+<br>
+<h3>12.1 Functional Testing</h3>
+<p>*   Unit Tests (Pytest).</p>
+<p>*   Integration Tests (API Endpoints).</p>
+<br>
+<h3>12.2 AI Output Validation</h3>
+<p>*   Manual review of Generated SOAP vs Transcript.</p>
+<br>
+<h3>12.3 UI/UX Testing</h3>
+<p>*   Responsive checks on Chrome/Safari.</p>
+<br>
+<h3>12.4 MVP Acceptance Criteria (Gherkin)</h3>
+<p>*   **Scenario**: Stroke Patient Check-in</p>
+<p>    *   *Given* a patient records "I have numbness in my left arm".</p>
+<p>    *   *When* the audio is processed.</p>
+<p>    *   *Then* the Triage Score must be > 90.</p>
+<p>    *   *And* the Front Desk Dashboard must show a "Critical" Red Badge.</p>
+<br>
+<p>---</p>
+<br>
+<h2>13. Release Planning</h2>
+<br>
+<h3>13.1 MVP Definition</h3>
+<p>Phase 1: Full Doctor & Front Desk workflow. No Billing.</p>
+<br>
+<h3>13.2 Go-Live Checklist</h3>
+<p>*   [ ] DB Migrated.</p>
+<p>*   [ ] API Keys Configured.</p>
+<p>*   [ ] Admin User Created.</p>
+<br>
+<h3>13.3 Rollback Strategy</h3>
+<p>*   Docker image revert.</p>
+<br>
+<p>---</p>
+<br>
+<h2>14. Risks & Mitigations</h2>
+<br>
+<h3>14.1 Technical Risks</h3>
+<p>*   **Risk**: AssemblyAI API downtime.</p>
+<p>*   **Mitigation**: Upload fallback + Queueing.</p>
+<br>
+<h3>14.2 Product Risks</h3>
+<p>*   **Risk**: Doctor distrust of AI.</p>
+<p>*   **Mitigation**: "Click to Edit" ensures Doctor is always in control.</p>
+<br>
+<h3>14.3 Adoption Risks</h3>
+<p>*   **Risk**: Workflow disruption.</p>
+<p>*   **Mitigation**: Parallel usage training.</p>
+<br>
+<p>---</p>
+<br>
+<h2>16. Appendices (Visuals)</h2>
+<br>
+<h3>A. Flowcharts & Diagrams</h3>
+<br>
+<p>#### System Architecture</p>
+<div class="mermaid">
+graph TD
+    User[User] --> FE[Frontend]
+    FE --> BE[Backend]
+    BE --> AI[AI Services]
+    BE --> DB[Database]
+</div>
+<br>
+<p>#### Triage Logic Flow</p>
+<div class="mermaid">
+flowchart LR
+    Audio --> Transcript
+    Transcript --> TriageParams{Keywords}
+    TriageParams -->|Stroke| Critical
+    TriageParams -->|None| Low
+</div>
+<br>
+<p>#### Detailed Patient Journey</p>
+<div class="mermaid">
+sequenceDiagram
+    participant Patient
+    participant FrontDesk
+    participant TriageAI
+    participant Doctor
+    participant System
+
+    %% Registration
+    Patient->>System: 1. Registers / Check-in
+    System->>FrontDesk: Notify New Arrival
+    
+    %% Intake & Triage
+    Patient->>System: 2. Records Pre-Visit Voice Note
+    System->>TriageAI: Analyze Audio for Risks
+    TriageAI-->>System: Returns Urgency Score (0-100)
+    System->>FrontDesk: 3. Update Queue (Critical First)
+    
+    %% Consultation
+    FrontDesk->>Doctor: Assigns Patient
+    Doctor->>System: 4. Starts Consultation (Record)
+    System->>System: Transcribes Audio (Real-time)
+    
+    %% AI Processing
+    Doctor->>System: Ends Consultation
+    System->>TriageAI: Generate SOAP Note
+    TriageAI-->>Doctor: 5. Drafts editable SOAP Note
+    
+    %% Verification
+    Doctor->>Doctor: Verifies/Edits Note
+    Doctor->>Patient: 6. Issues Prescription
+</div>
+<br>
+
+</body>
+</html>

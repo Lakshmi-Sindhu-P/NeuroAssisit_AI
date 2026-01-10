@@ -8,7 +8,7 @@ def create_doctor():
     # Ensure tables exist (since we just switched to SQLite)
     SQLModel.metadata.create_all(engine)
 
-    email = "dr.alexander@neuro.com"
+    email = "dr.smith@neuro.com"
     password = "password123"
     
     with Session(engine) as session:
@@ -36,8 +36,8 @@ def create_doctor():
         # Create Profile
         profile = DoctorProfile(
             user_id=user.id,
-            first_name="Alexander",
-            last_name="Fleming",
+            first_name="John",
+            last_name="Smith",
             specialization="Neurology",
             license_number=f"LIC-{str(uuid4())[:8]}",
             years_of_experience=15,

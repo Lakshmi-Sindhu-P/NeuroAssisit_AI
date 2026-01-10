@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select, or_
 from typing import List, Dict, Any
 from datetime import datetime
 from app.core.db import get_session
@@ -15,7 +15,12 @@ def get_failed_queue(session: Session = Depends(get_session)):
     query = (
         select(Consultation, PatientProfile)
         .join(PatientProfile, Consultation.patient_id == PatientProfile.user_id)
-        .where(Consultation.requires_manual_review == True)
+        .where(
+            or_(
+                Consultation.requires_manual_review == True,
+                Consultation.status == ConsultationStatus.FAILED
+            )
+        )
         .order_by(Consultation.created_at.desc())
     )
     results = session.exec(query).all()
@@ -38,8 +43,14 @@ def get_failed_queue(session: Session = Depends(get_session)):
         })
     return queue
 
+from app.api.deps import get_current_user
+from app.models.base import User
+
 @router.get("/queue", response_model=List[Dict[str, Any]])
-def get_patient_queue(session: Session = Depends(get_session)):
+def get_patient_queue(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """
     Returns the prioritized patient queue for the dashboard.
     Sorting Logic:
@@ -49,7 +60,13 @@ def get_patient_queue(session: Session = Depends(get_session)):
     query = (
         select(Consultation, PatientProfile)
         .join(PatientProfile, Consultation.patient_id == PatientProfile.user_id)
-        .where(Consultation.status == ConsultationStatus.COMPLETED)
+        .where(
+            or_(
+                Consultation.status == ConsultationStatus.COMPLETED,
+                Consultation.status == ConsultationStatus.IN_PROGRESS,
+                Consultation.status == ConsultationStatus.SCHEDULED
+            )
+        )
         .where(Consultation.end_time == None)
         .order_by(Consultation.urgency_score.desc(), Consultation.created_at.asc())
     )
@@ -69,6 +86,7 @@ def get_patient_queue(session: Session = Depends(get_session)):
             "urgency_score": consultation.urgency_score or 0,
             "triage_category": consultation.triage_category,
             "wait_time_minutes": wait_time_min,
+            "reason": consultation.notes, # Added for Demo Hints
             "safety_warnings": consultation.safety_warnings or []
         })
     
